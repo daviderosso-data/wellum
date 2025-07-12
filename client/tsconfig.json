@@ -2,8 +2,8 @@
   "compilerOptions": {
     "target": "ES2020",
     "lib": ["DOM", "DOM.Iterable", "ES2020"],
-    "module": "NodeNext",
-    "moduleResolution": "nodenext",
+    "module": "EsNext",
+    "moduleResolution": "Node",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "strict": true,
