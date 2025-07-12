@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom";
 
+const API_URL = import.meta.env.VITE_URL_SERVER 
 
 type Exercise = {
     _id: string
@@ -106,7 +107,7 @@ const ExerciseList = ({ exercises }: Props) => {
         <button
           className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
           onClick={async () => {
-            await fetch(`http://localhost:3000/api/exercises/${deleteId}`, { method: "DELETE" });
+            await fetch(`${API_URL}/api/exercises/${deleteId}`, { method: "DELETE" });
             setDeleteId(null);
             // Aggiorna la lista esercizi dopo l'eliminazione
             // Puoi anche chiamare una funzione prop o ricaricare i dati qui

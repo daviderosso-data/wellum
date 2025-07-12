@@ -1,5 +1,8 @@
 import { useState } from "react";
 import Sidebar from "../components/Sidebar";
+const API_URL = import.meta.env.VITE_URL_SERVER 
+
+
 export default function AddExercise() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -30,7 +33,7 @@ console.log("Form data:", {
     });
 
     try {
-      const res = await fetch("http://localhost:3000/api/exercises/upload", {
+      const res = await fetch(`${API_URL}/api/exercises/upload`, {
         method: "POST",
         body: formData,
       });

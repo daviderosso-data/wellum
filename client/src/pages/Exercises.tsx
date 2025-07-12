@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import ExerciseList from "../components/ExpCards";
+const API_URL = import.meta.env.VITE_URL_SERVER 
 
 type Exercise = {
   _id: string;
@@ -19,7 +20,7 @@ export default function Exercises() {
   const [groupFilter, setGroupFilter] = useState("");
 
   useEffect(() => {
-    fetch("http://localhost:3000/api/exercises")
+    fetch(`${API_URL}/api/exercises`)
       .then(res => res.json())
       .then(setExercises)
       .catch(err => console.error("Errore nel caricamento esercizi:", err));

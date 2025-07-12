@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import WorkoutCompleteModal from './workoutCompleteModal'
 import { useUser } from "@clerk/clerk-react";
+const API_URL = import.meta.env.VITE_URL_SERVER 
 
 type Exercise = {
   exerciseId: string
@@ -41,7 +42,7 @@ const [totalWorkoutSeconds, setTotalWorkoutSeconds] = useState(0)
 
   // Fetch scheda
   useEffect(() => {
-    fetch(`http://localhost:3000/api/sheet/${sheetId}`)
+    fetch(`${API_URL}/api/sheet/${sheetId}`)
       .then(res => res.json())
       .then(data => setExercises(data.exercises || []))
   }, [sheetId])
@@ -52,7 +53,7 @@ const [totalWorkoutSeconds, setTotalWorkoutSeconds] = useState(0)
       const ex = exercises[currentIndex]
       if (ex?.exerciseId) {
         try {
-          const res = await fetch(`http://localhost:3000/api/exercises/${ex.exerciseId}`)
+          const res = await fetch(`${API_URL}/api/exercises/${ex.exerciseId}`)
           const data = await res.json()
           setExerciseData(data)
         } catch {
@@ -143,7 +144,7 @@ const [totalWorkoutSeconds, setTotalWorkoutSeconds] = useState(0)
   }
 const handleSaveWorkout = async () => {
     if (!user?.id) return;
-    await fetch("http://localhost:3000/api/workouts", {
+    await fetch(`${API_URL}/api/workouts`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

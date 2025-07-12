@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react'
 
+
+const API_URL = import.meta.env.VITE_URL_SERVER 
+
 type Sheet = {
   _id: string
   name: string
@@ -18,7 +21,7 @@ const WorkoutSetup = ({ userId, onStart, onBack }: Props) => {
 
   useEffect(() => {
     if (!userId) return
-    fetch(`http://localhost:3000/api/sheet/user/${userId}`)
+    fetch(`${API_URL}/api/sheet/user/${userId}`)
       .then((res) => res.json())
       .then((data) => setSheets(data))
   }, [userId])

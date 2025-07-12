@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import Sidebar from '../components/Sidebar';
+const API_URL = import.meta.env.VITE_URL_SERVER 
 
 type Exercise = {
   exerciseId: string
@@ -46,11 +47,11 @@ export default function AgendaPage() {
   useEffect(() => {
     if (!user?.id) return;
     setLoading(true);
-    fetch(`http://localhost:3000/api/workouts/user/${user.id}`)
+    fetch(`${API_URL}/api/workouts/user/${user.id}`)
       .then(res => res.json())
       .then(data => setWorkouts(data))
       .finally(() => setLoading(false));
-    fetch(`http://localhost:3000/api/sheet/user/${user.id}`)
+    fetch(`${API_URL}/api/sheet/user/${user.id}`)
       .then(res => res.json())
       .then(data => setSheets(data));
   }, [user?.id]);

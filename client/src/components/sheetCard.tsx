@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+const API_URL = import.meta.env.VITE_URL_SERVER 
 
 type ExerciseItem = {
   exerciseId: string;
@@ -48,12 +49,14 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
       await Promise.all(
         sheet.exercises.map(async (ex) => {
           try {
-            const res = await fetch(`http://localhost:3000/api/exercises/${ex.exerciseId}`);
+            const res = await fetch(`${API_URL}/api/exercises/${ex.exerciseId}`);
             if (res.ok) {
               const data = await res.json();
               details[ex.exerciseId] = data;
             }
-          } catch {}
+          } catch {
+            // Silently ignore fetch errors
+          }
         })
       );
       setExerciseDetails(details);
@@ -62,7 +65,7 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
   }, [sheet.exercises]);
 
   useEffect(() => {
-    fetch("http://localhost:3000/api/exercises")
+    fetch(`${API_URL}/api/exercises`)
       .then(res => res.json())
       .then(data => setAllExercises(data))
       .catch(() => setAllExercises([]));
@@ -78,7 +81,7 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
       weight,
       notes,
     };
-    await fetch(`http://localhost:3000/api/sheet/${sheet._id}`, {
+    await fetch(`${API_URL}/api/sheet/${sheet._id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -105,7 +108,7 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
 
   const handleSaveAll = async () => {
     setSaving(true); // Avvia il caricamento
-    await fetch(`http://localhost:3000/api/sheet/${sheet._id}`, {
+    await fetch(`${API_URL}/api/sheet/${sheet._id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...sheet, exercises: editExercises }),

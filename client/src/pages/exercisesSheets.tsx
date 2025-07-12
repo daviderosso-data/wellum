@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useUser } from "@clerk/clerk-react";
 import Sidebar from "../components/Sidebar";
 import SheetCard from "../components/sheetCard";
+const API_URL = import.meta.env.VITE_URL_SERVER 
 
 type ExerciseItem = {
   exerciseId: string;
@@ -35,7 +36,7 @@ export default function ExercisesSheets() {
 
   useEffect(() => {
     if (!user?.id) return;
-    fetch(`http://localhost:3000/api/sheet/user/${user?.id}`)
+    fetch(`${API_URL}/api/sheet/user/${user?.id}`)
       .then(res => res.json())
       .then(data => setSheets(data))
       .catch(() => setSheets([]))
@@ -47,7 +48,7 @@ export default function ExercisesSheets() {
     if (!newSheetName.trim() || !user?.id) return;
     setCreating(true);
     try {
-      const res = await fetch("http://localhost:3000/api/sheet", {
+      const res = await fetch(`${API_URL}/api/sheet`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -78,7 +79,7 @@ export default function ExercisesSheets() {
   const handleDeleteSheet = async () => {
     if (!sheetToDelete) return;
     try {
-      await fetch(`http://localhost:3000/api/sheet/${sheetToDelete._id}`, { method: "DELETE" });
+      await fetch(`${API_URL}/api/sheet/${sheetToDelete._id}`, { method: "DELETE" });
       setSheets(prev => prev.filter(s => s._id !== sheetToDelete._id));
       setShowDeleteModal(false);
       setSheetToDelete(null);
