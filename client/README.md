@@ -1,54 +1,108 @@
-# React + TypeScript + Vite
+# Wellum Client
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is the **client-side React application** for Wellum, a modern fitness and workout tracking platform.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- User authentication (Clerk)
+- Responsive sidebar navigation
+- Workout sheets management (create, edit, delete)
+- Guided workout mode
+- Exercise library with images and videos
+- Workout history and dashboard with charts
+- Agenda/calendar view for completed workouts
 
-## Expanding the ESLint configuration
+## Tech Stack
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **React** (with hooks)
+- **TypeScript**
+- **Tailwind CSS** for styling
+- **Clerk** for authentication
+- **Chart.js** (via react-chartjs-2) for data visualization
+- **Vite** (or Create React App) as build tool
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+## Getting Started
+
+### Prerequisites
+
+- Node.js (v18+ recommended)
+- npm or yarn
+
+### Installation
+
+1. Clone the repository:
+
+   ```bash
+   git clone https://github.com/yourusername/wellum.git
+   cd wellum/client
+   ```
+
+2. Install dependencies:
+
+   ```bash
+   npm install
+   # or
+   yarn install
+   ```
+
+3. Copy the example environment variables and configure them:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   Edit `.env` to set your API endpoints and Clerk keys.
+
+4. Start the development server:
+
+   ```bash
+   npm run dev
+   # or
+   yarn dev
+   ```
+
+5. The app will be available at [http://localhost:5173](http://localhost:5173) (or the port specified by Vite).
+
+## Project Structure
+
+```
+client/
+├── src/
+│   ├── components/    # Reusable UI components
+│   ├── pages/         # Page components (route targets)
+│   ├── lib/           # Utility functions
+│   ├── assets/        # Images, videos, etc.
+│   └── App.tsx        # Main app component
+├── public/            # Static files (served as root)
+├── package.json
+└── README.md
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Scripts
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- `npm run dev` – Start development server
+- `npm run build` – Build for production
+- `npm run preview` – Preview production build
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
-```
+## API
+
+This client expects a backend API (see `/api` endpoints in the code).  
+You can find or implement the backend in the `server/` directory or as a separate service.
+
+## Authentication
+
+Authentication is handled via [Clerk](https://clerk.com/).  
+You need to configure your Clerk project and set the public key in your `.env` file.
+
+## Customization
+
+- Update colors, branding, and assets in `src/assets/` and Tailwind config.
+- Add or modify features in the `src/components/` and `src/pages/` directories.
+
+## License
+
+MIT
+
+---
+
+**Wellum** – Your digital fitness companion.

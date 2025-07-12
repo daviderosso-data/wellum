@@ -1,35 +1,33 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import {  Routes, Route } from  'react-router-dom'
+import Home from './pages/Home'
+import SignUpPage from './pages/Signup'
+import SignInPage from './pages/Login'
+import SignUpSuccess from './pages/SignupSuccess'
+import Exercises from './pages/Exercises'
+import ProtectedRoute from './components/ProtectedRoutes'
+import AddExercise from './pages/Addexercises'
+import ExercisesSheets from './pages/exercisesSheets'
+import TimerPage from './pages/timerPage'
+import AgendaPage from './pages/Agenda'
+import WorkoutGuide from './pages/workoutGuide'
 
-function App() {
-  const [count, setCount] = useState(0)
-
+export default function App() {
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/signup" element={<SignUpPage />} />
+        <Route path="/login" element={<SignInPage />} />
+        <Route path="/signup-success" element={<SignUpSuccess/>} />
+        <Route path="/exercises" element={<ProtectedRoute><Exercises /></ProtectedRoute>}/>
+        <Route path="/addexercises" element={<ProtectedRoute><AddExercise /></ProtectedRoute>} />
+        <Route path="/exercisesheet" element={<ProtectedRoute><ExercisesSheets /></ProtectedRoute>} />
+        <Route path="/timer" element={<ProtectedRoute><TimerPage /></ProtectedRoute>} />
+        <Route path="/agenda" element={<ProtectedRoute><AgendaPage /></ProtectedRoute>} />
+        <Route path="/workoutguide" element={<ProtectedRoute><WorkoutGuide /></ProtectedRoute>} />
+
+
+      </Routes>
+ 
+           )
 }
 
-export default App
