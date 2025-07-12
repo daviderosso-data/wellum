@@ -107,6 +107,9 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
   };
 const handleSaveAll = async () => {
   setSaving(true);
+   console.log('Trying to save to:', API_URL);
+  console.log('Sheet ID:', sheet._id);
+  
   try {
     const res = await fetch(`${API_URL}/api/sheet/${sheet._id}`, {
       method: "PUT",

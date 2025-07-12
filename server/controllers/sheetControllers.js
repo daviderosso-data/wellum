@@ -42,6 +42,9 @@ exports.getSheetById = async (req, res) => {
 // Aggiorna una scheda
 exports.updateSheet = async (req, res) => {
   try {
+    console.log('Update sheet request received');
+    console.log('Sheet ID:', req.params.id);
+    console.log('Request body:', req.body);
     const sheet = await Sheet.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!sheet) return res.status(404).json({ error: 'Scheda non trovata' });
     res.json(sheet);
