@@ -21,7 +21,7 @@ router.post('/upload', upload.single('image'), async (req, res) => {
   try {
     console.log(req.body)
     const { name, description, group, videoUrl } = req.body;
-    const imageUrl = `http://localhost:3000/uploads/foto/${req.file.filename}`;
+    const imageUrl = `${process.env.URL_SERVER}/uploads/foto/${req.file.filename}`;
     const exercise = await exerciseController.createExerciseWithImage({ name, description, imageUrl, group, videoUrl });
     res.json(exercise);
   } catch (err) {

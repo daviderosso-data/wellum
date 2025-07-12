@@ -105,19 +105,32 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
       )
     );
   };
-
-  const handleSaveAll = async () => {
-    setSaving(true); // Avvia il caricamento
-    await fetch(`${API_URL}/api/sheet/${sheet._id}`, {
+const handleSaveAll = async () => {
+  setSaving(true);
+  try {
+    const res = await fetch(`${API_URL}/api/sheet/${sheet._id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...sheet, exercises: editExercises }),
     });
-    setTimeout(() => {
-      setSaving(false); // Ferma il caricamento dopo 1 secondo
-    setIsEditing(false);
-    window.location.reload();}, 2000); // Simula un caricamento di 1 secondo
-  };
+    if (res.ok) {
+      setIsEditing(false);
+      // Attendi 1 secondo per UX, poi ricarica (opzionale)
+      setTimeout(() => {
+        setSaving(false);
+        window.location.reload();
+      }, 2000);
+    } else {
+      // Gestisci errore di salvataggio
+      setSaving(false);
+      alert("Errore durante il salvataggio. Riprova.");
+    }
+  } catch (err) {
+    setSaving(false);
+    console.log("Errore di rete:", err);
+    alert("Errore di rete. Riprova.");
+  }
+};
 
   const handleCancelAll = () => {
     setIsEditing(false);
