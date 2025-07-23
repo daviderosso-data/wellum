@@ -12,7 +12,7 @@ type Exercise = {
   videoUrl?: string;
 };
 
-const EXERCISES_PER_PAGE = 2;
+const EXERCISES_PER_PAGE = 6;
 
 export default function Exercises() {
   const [exercises, setExercises] = useState<Exercise[]>([]);
@@ -43,16 +43,16 @@ export default function Exercises() {
   }, [groupFilter]);
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="flex min-h-screen bg-zinc-600">
       <div className="fixed top-0 left-0 h-screen w-64 z-10">
         <Sidebar />
       </div>
       <div className="flex-1 p-6 ml-64">
-        <h1 className="text-3xl font-bold mb-6">Esercizi</h1>
-        <p className="text-gray-600 mb-4">Seleziona un esercizio per aggiungerlo alla tua scheda.</p>
+        <h1 className="text-3xl font-bold text-amber-500 mb-6">Esercizi</h1>
+      
         <div className="flex flex-col md:flex-row gap-4 mb-6">
           <select
-            className="p-2 border rounded w-full md:w-1/4"
+            className="p-2 border text-amber-500 rounded border-amber-500 w-full md:w-1/4"
             value={groupFilter}
             onChange={e => setGroupFilter(e.target.value)}
           >
@@ -65,7 +65,7 @@ export default function Exercises() {
         <ExerciseList exercises={paginatedExercises} />
         <div className="flex justify-center mt-6 space-x-2">
           <button
-            className="px-3 py-1 bg-gray-300 rounded disabled:opacity-50"
+            className="px-3 py-1 bg-amber-500 rounded disabled:opacity-50"
             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
             disabled={currentPage === 1}
           >
@@ -74,14 +74,14 @@ export default function Exercises() {
           {Array.from({ length: totalPages }, (_, i) => (
             <button
               key={i}
-              className={`px-3 py-1 rounded ${currentPage === i + 1 ? "bg-blue-600 text-white" : "bg-gray-200"}`}
+              className={`px-3 py-1 rounded ${currentPage === i + 1 ? "bg-zinc-500 text-white" : "bg-gray-200"}`}
               onClick={() => setCurrentPage(i + 1)}
             >
               {i + 1}
             </button>
           ))}
           <button
-            className="px-3 py-1 bg-gray-300 rounded disabled:opacity-50"
+            className="px-3 py-1 bg-amber-500 rounded disabled:opacity-50"
             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages}
           >
