@@ -57,7 +57,7 @@ export default function AgendaPage() {
   }, [user?.id]);
 
   if (!user) {
-    return <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">Loading...</div>;
+    return <div className="min-h-screen flex items-center justify-center bg-zinc-600 p-4">Loading...</div>;
   }
 
   const workoutsByDay: Record<string, Workout[]> = {};
@@ -97,27 +97,27 @@ export default function AgendaPage() {
   const selectedWorkouts = selectedDay ? workoutsByDay[selectedDay] || [] : [];
 
   return (
-    <div className="min-h-screen flex bg-gray-50">
+    <div className="min-h-screen flex bg-zinc-600">
       <div className="fixed top-0 left-0 h-screen w-64 z-10">
         <Sidebar />
       </div>
       <div className="flex-1 ml-64 p-8">
-        <h1 className="text-2xl font-bold mb-6">Agenda allenamenti</h1>
+        <h1 className="text-2xl text-amber-500 font-bold mb-6">Agenda allenamenti</h1>
         <div className="flex items-center justify-between mb-4">
-          <button onClick={prevMonth} className="px-3 py-1 rounded bg-white border border-gray-300 hover:bg-gray-100">&lt;</button>
-          <span className="font-medium text-base">
+          <button onClick={prevMonth} className="px-3 py-1 rounded text-amber-500 cursor-pointer  hover:bg-zinc-400">&lt;</button>
+          <span className="font-medium text-amber-500 text-base">
             {monthNames[currentMonth]} {currentYear}
           </span>
-          <button onClick={nextMonth} className="px-3 py-1 rounded bg-white border border-gray-300 hover:bg-gray-100">&gt;</button>
+          <button onClick={nextMonth} className="px-3 py-1 rounded text-amber-500 cursor-pointer  hover:bg-zinc-400">&gt;</button>
         </div>
         {loading ? (
           <div className="flex justify-center items-center h-64">
-            <span className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-400"></span>
+            <span className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></span>
           </div>
         ) : (
-          <div className="grid grid-cols-7 gap-2 bg-white rounded-xl shadow p-4">
+          <div className="grid grid-cols-7 gap-2 bg-zinc-200 rounded-xl shadow p-4">
             {["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"].map(day => (
-              <div key={day} className="font-medium text-center text-gray-600 pb-2">{day}</div>
+              <div key={day} className="font-medium text-center text-zinc-900 pb-2">{day}</div>
             ))}
             {calendarDays.map((dateStr, idx) => {
               const isToday = dateStr === new Date().toISOString().slice(0, 10);
@@ -125,17 +125,17 @@ export default function AgendaPage() {
               return (
                 <div
                   key={idx}
-                  className={`h-20 border border-gray-200 rounded flex flex-col items-center justify-start p-1 cursor-pointer transition
+                  className={`h-20 border border-amber-500/60 rounded flex flex-col items-center justify-start p-1 cursor-pointer transition
                     ${isToday ? "ring-1 ring-gray-400" : ""}
-                    ${hasWorkout ? "bg-gray-100 hover:bg-gray-200" : "hover:bg-gray-50"}
+                    ${hasWorkout ? "bg-amber-500/40 hover:bg-zinc-100" : "hover:bg-zinc-100"}
                   `}
                   onClick={() => dateStr && hasWorkout && setSelectedDay(dateStr)}
                 >
-                  <div className={`font-semibold text-base ${isToday ? "text-gray-800" : ""}`}>
+                  <div className={`font-semibold text-base ${isToday ? "text-zinc-900" : ""}`}>
                     {dateStr ? Number(dateStr.slice(-2)) : ""}
                   </div>
                   {hasWorkout && (
-                    <div className="mt-1 text-xs text-gray-700 font-medium">
+                    <div className="mt-1 text-xs text-zinc-900 font-medium">
                       {workoutsByDay[dateStr].length} workout
                     </div>
                   )}
@@ -145,33 +145,33 @@ export default function AgendaPage() {
           </div>
         )}
 
-        {/* MODALE WORKOUT DEL GIORNO */}
+        {/* workout modal */}
         {selectedDay && (
-          <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-md border border-gray-200">
-              <h2 className="text-xl font-bold mb-4">
+          <div className="fixed inset-0 bg-zinc-900 bg-opacity-30 flex items-center justify-center z-50">
+            <div className="bg-zinc-600 rounded-xl shadow-lg p-6 w-full max-w-md">
+              <h2 className="text-xl text-amber-500 font-bold mb-4">
                 Workout del {selectedDay.split('-').reverse().join('/')}
               </h2>
               {selectedWorkouts.length === 0 ? (
-                <p className="text-gray-500">Nessun workout in questa data.</p>
+                <p className="text-white">Nessun workout in questa data.</p>
               ) : (
                 <ul className="space-y-3">
                   {selectedWorkouts.map(w => (
                     <li key={w._id} className="border-b border-gray-200 pb-3">
-                      <div className="font-semibold text-base">
+                      <div className="font-semibold text-white text-base">
                         {sheetNameMap[w.sheetId] || "Scheda"}
                       </div>
-                      <div className="text-gray-700">
+                      <div className="text-white">
                         Durata: <span className="font-semibold">{Math.floor(w.totalSeconds / 60)} min {w.totalSeconds % 60} sec</span>
                       </div>
-                      <div className="text-xs text-gray-500">Esercizi: {w.exercises.length}</div>
+                      <div className="text-xs text-white">Esercizi: {w.exercises.length}</div>
                     </li>
                   ))}
                 </ul>
               )}
               <div className="flex justify-end mt-6">
                 <button
-                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
+                  className="px-4 py-2 bg-amber-500 text-zinc-800 cursor-pointer rounded hover:bg-zinc-200"
                   onClick={() => setSelectedDay(null)}
                 >
                   Chiudi
