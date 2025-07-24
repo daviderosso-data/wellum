@@ -31,7 +31,7 @@ const Sidebar = () => {
       {/* Sidebar desktop */}
       <div className="hidden md:block w-64 h-screen bg-zinc-800 shadow-md p-6">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl text-green-500 font-bold">Wellum - DEV</h2>
+          <h2 className="text-xl text-amber-500 font-bold">Wellum</h2>
           <Link to="/" className="text-white hover:text-amber-500">
             <FaHome size={20} />
           </Link>
