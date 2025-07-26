@@ -47,7 +47,7 @@ export default function Exercises() {
       <div className="fixed top-0 left-0 h-screen w-64 z-10">
         <Sidebar />
       </div>
-      <div className="flex-1 p-6 ml-64">
+      <div className="flex-1 mt-20 p-4 md:p-6 md:ml-64 w-full">
         <h1 className="text-3xl font-bold text-amber-500 mb-6">Esercizi</h1>
       
         <div className="flex flex-col md:flex-row gap-4 mb-6">
