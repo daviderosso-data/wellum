@@ -31,7 +31,7 @@ const Sidebar = () => {
       {/* Sidebar desktop */}
       <div className="hidden md:block w-64 h-screen bg-zinc-800 shadow-md p-6">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl text-amber-500 font-bold">Wellum</h2>
+          <div className="flex"> <img src="assets/pictures/logoAmberTransp.png" className="h-7"></img>  <h1 className="text-xl font-bold font-display text-amber-500 curosor-pointer"><Link to="/">Wellum</Link></h1></div>
           <Link to="/" className="text-white hover:text-amber-500">
             <FaHome size={20} />
           </Link>
@@ -50,9 +50,7 @@ const Sidebar = () => {
             Tutti gli Esercizi
           </Link>
        
-          <Link to="/timer" className={linkClass('/timer')}>
-            Timer
-          </Link>
+          
           <Link to="/addexercises" className={linkClass('/addexercises')}>
             Aggiungi Esercizio
           </Link>
@@ -68,20 +66,19 @@ const Sidebar = () => {
       {/* Sidebar mobile overlay */}
       {open && (
   <div className="fixed inset-0 z-50 bg-black bg-opacity-30 flex">
-    <div className="w-64 h-full bg-white shadow-md p-6 relative animate-slide-in-left">
+    <div className="w-64 h-full bg-zinc-800 shadow-md p-6 relative animate-slide-in-left">
       {/* Tasto chiudi in alto a destra */}
       <button
         onClick={() => setOpen(false)}
-        className="absolute top-4 right-4 text-gray-600 hover:text-indigo-600"
+        className="absolute top-4 right-4 text-white hover:text-amber-500"
         aria-label="Chiudi menu"
       >
         <FaTimes size={24} />
       </button>
       <div className="mb-6">
-        <h2 className="text-xl font-bold mb-2">Wellum</h2>
-        <Link
+ <div className="flex"> <img src="assets/pictures/logoAmberTransp.png" className="h-7"></img>  <h1 className="text-xl font-bold font-display text-amber-500 curosor-pointer"><Link to="/">Wellum</Link></h1></div>        <Link
           to="/"
-          className="text-gray-600 hover:text-indigo-600 inline-flex items-center gap-2 mb-4"
+          className="text-zinc-800 inline-flex items-center gap-2 mb-4"
           onClick={() => setOpen(false)}
         >
           <FaHome size={20} />
@@ -101,12 +98,7 @@ const Sidebar = () => {
         <Link to="/exercises" className={linkClass('/exercises')} onClick={() => setOpen(false)}>
           Tutti gli Esercizi
         </Link>
-        <Link to="/dashboard" className={linkClass('/dashboard')} onClick={() => setOpen(false)}>
-          Dashboard
-        </Link>
-        <Link to="/timer" className={linkClass('/timer')} onClick={() => setOpen(false)}>
-          Timer
-        </Link>
+      
         <Link to="/addexercises" className={linkClass('/addexercises')} onClick={() => setOpen(false)}>
           Aggiungi Esercizio
         </Link>

@@ -8,4 +8,6 @@ router.post('/', workoutController.createWorkout);
 // Get all workouts for a user
 router.get('/user/:userId', workoutController.getUserWorkouts);
 
+router.delete('/:id', workoutController.deletWorkout);
+
 module.exports = router;

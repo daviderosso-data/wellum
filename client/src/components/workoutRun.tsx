@@ -24,7 +24,7 @@ const WeightModal = ({ isOpen, currentWeight, onSave, onClose }: {
   onSave: (weight: number) => void, 
   onClose: () => void 
 }) => {
-  const [weight, setWeight] = useState(currentWeight);
+  const [weight, setWeight] = useState(currentWeight.toString());
 
   if (!isOpen) return null;
 
@@ -34,14 +34,20 @@ const WeightModal = ({ isOpen, currentWeight, onSave, onClose }: {
         <h3 className="text-xl font-bold text-amber-500 mb-4">Modifica carico</h3>
         <p className="mb-4 text-white">Inserisci il carico per questa ripetizione:</p>
         
-        <input
-          type="number"
-          value={weight}
-          onChange={(e) => setWeight(Number(e.target.value))}
-          className="w-full p-2 mb-4 bg-zinc-700 text-white border border-zinc-600 rounded"
-          min={0}
-          step={0.5}
-        />
+      <input
+  type="text"
+  inputMode="decimal"
+  value={weight}
+  onChange={(e) => {
+    const value = e.target.value;
+    // Accetta solo numeri e un punto decimale
+    if (/^\d*\.?\d*$/.test(value)) {
+      setWeight(value);
+    }
+  }}
+  className="w-full p-2 mb-4 bg-zinc-700 text-white border border-zinc-600 rounded appearance-none"
+  placeholder="0.0"
+/>
         
         <div className="flex justify-end gap-2">
           <button 
@@ -51,7 +57,7 @@ const WeightModal = ({ isOpen, currentWeight, onSave, onClose }: {
             Annulla
           </button>
           <button 
-            onClick={() => onSave(weight)}
+            onClick={() => onSave(Number(weight))}
             className="px-4 py-2 bg-amber-500 text-zinc-900 rounded"
           >
             Salva

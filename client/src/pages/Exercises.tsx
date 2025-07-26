@@ -52,7 +52,7 @@ export default function Exercises() {
       
         <div className="flex flex-col md:flex-row gap-4 mb-6">
           <select
-            className="p-2 border text-amber-500 rounded border-amber-500 w-full md:w-1/4"
+            className="p-2 border bg-zinc-200 text-zinc-900 rounded border-amber-500 w-full md:w-1/4"
             value={groupFilter}
             onChange={e => setGroupFilter(e.target.value)}
           >
