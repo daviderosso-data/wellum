@@ -176,13 +176,13 @@ export default function ExercisesSheets() {
   };
 
   return (
-    <div className="flex min-h-screen bg-zinc-400">
+    <div className="flex min-h-screen bg-zinc-600">
       <div className="fixed top-0 left-0 h-screen w-64 z-10">
         <Sidebar />
       </div>
       <div className="flex-1 p-6 md:ml-64">
-        <div className="flex justify-between items-center mb-6 mt-15">
-          <h1 className="text-3xl text-zinc-950 font-bold">Le tue schede</h1>
+        <div className="flex justify-between items-center mb-6 mt-20">
+          <h1 className="text-3xl text-amber-500 font-bold">Le tue schede</h1>
           <button
             className="px-4 py-2 bg-amber-500 text-zinc-900 rounded hover:bg-amber-600 cursor-pointer font-semibold"
             onClick={() => setShowModal(true)}

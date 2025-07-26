@@ -206,7 +206,7 @@ export default function AgendaPage() {
                 return (
                   <div
                     key={idx}
-                    className={`aspect-square md:h-16 lg:h-20 border border-amber-500/60 rounded flex flex-col items-center justify-start p-1 cursor-pointer transition
+                    className={` md:h-16 lg:h-20 border border-amber-500/60 rounded flex flex-col items-center justify-start p-1 cursor-pointer transition
                       ${isToday ? "ring-1 ring-gray-400" : ""}
                       ${hasWorkout ? "bg-amber-500/40 hover:bg-zinc-100" : "hover:bg-zinc-100"}
                       ${!dateStr ? "bg-zinc-300/30" : ""}
