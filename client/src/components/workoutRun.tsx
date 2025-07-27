@@ -299,7 +299,7 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
             <img
               src={exerciseData.imageUrl}
               alt={exerciseData.name}
-              className="w-full h-64 object-cover rounded"
+              className="w-full h-48 object-cover rounded"
             />
           )}
 
@@ -311,27 +311,29 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
             {phase === 'rest' ? `Recupero: ${formatTime(timer)}` : `Timer: ${formatTime(timer)}`}
           </div>
 
-          <div className="flex flex-col items-center gap-4 mt-4">
-            <button
-              onClick={handleMainButton}
-              className="px-6 py-3 bg-amber-500 text-zinc-900 hover:bg-zinc-400 rounded text-lg"
+          <div className="flex items-center gap-4 mt-4">
+            
+          <button
+              onClick={skipExercise}
+              className="text-xs text-zinc-200 hover:underline mt-2"
             >
-              {buttonLabel()}
+              Salta esercizio
             </button>
             {phase === 'idle' && (
               <button
                 onClick={() => setShowWeightModal(true)}
-                className="px-4 py-2 bg-zinc-500 text-white rounded text-sm"
+                className="px-4 py-2 bg-zinc-500 text-whit rounded text-sm"
               >
                 Modifica carico
               </button>
-            )}
-            <button
-              onClick={skipExercise}
-              className="text-sm text-zinc-200 hover:underline mt-2"
+              
+            )}<button
+              onClick={handleMainButton}
+              className="px-6 py-3 bg-amber-500 shadow-md text-zinc-900 hover:bg-zinc-400 rounded text-xl font-semibold transition"
             >
-              Salta esercizio
+              {buttonLabel()}
             </button>
+           
           </div>
         </div>
       </div>

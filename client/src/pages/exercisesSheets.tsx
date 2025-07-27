@@ -197,7 +197,7 @@ export default function ExercisesSheets() {
         <Link to="/" className="flex items-center">
           <img src="/assets/pictures/logoAmberTransp.png" className="ml-6 h-8" alt="Wellum logo" />
         </Link>
-        <h1 className="text-xl font-bold text-amber-500 ml-3"></h1>
+        <h1 className="text-xl font-bold text-amber-500 ml-3">Schede</h1>
       </div>
         <div className="flex justify-between items-center mb-6 mt-20">
           <h1 className="text-3xl text-amber-500 font-bold">Le tue schede</h1>
