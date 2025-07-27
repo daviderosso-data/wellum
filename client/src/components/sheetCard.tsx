@@ -176,142 +176,151 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
   }, [showExerciseDropdown]);
 
   return (
-    <div className="bg-zinc-300 rounded shadow p-4">
-      <div className="flex justify-between items-center mb-2">
-        <h2 className="text-xl font-bold">{sheet.name}</h2>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setShowModal(true)}
-            className="px-2 py-1 bg-zinc-400 text-xs md:text-base  text-zinc-900 rounded hover:bg-zinc-200 transition font-semibold cursor-pointer"
-          >
-            + Aggiungi esercizio
-          </button>
+    <div className="bg-zinc-300 rounded shadow p-4 overflow-hidden">
+      <div className="flex flex-col mb-2">
+        <h2 className="text-xl font-bold break-words">{sheet.name}</h2>
+        <p className="text-gray-500 text-sm mb-2">
+          Creata il {new Date(sheet.createdAt).toLocaleDateString()}
+        </p>
+        
+        {/* Pulsanti - riorganizzati per mobile e nascosto "Aggiungi esercizio" in modalità modifica */}
+        <div className="flex flex-wrap gap-2">
+          {!isEditing && (
+            <button
+              onClick={() => setShowModal(true)}
+              className="px-2 py-1 bg-zinc-400 text-xs md:text-base text-zinc-900 rounded hover:bg-zinc-200 transition font-semibold cursor-pointer"
+            >
+              + Aggiungi esercizio
+            </button>
+          )}
+          
           {!isEditing ? (
             <button
               onClick={handleEditAll}
-              className="px-2 py-1 bg-amber-500 text-xs md:text-base  text-zinc-900 rounded hover:bg-amber-600 transition font-semibold cursor-pointer"
+              className="px-2 py-1 bg-amber-500 text-xs md:text-base text-zinc-900 rounded hover:bg-amber-600 transition font-semibold cursor-pointer"
             >
               Modifica
             </button>
           ) : (
-            <>
+            <div className="flex flex-wrap gap-2">
               <button
                 onClick={handleSaveAll}
-                className="px-3 py-1 bg-green-500 text-zinc-900 rounded hover:bg-green-600 transition font-semibold cursor-pointer"
+                className="px-2 py-1 bg-green-500 text-xs md:text-base text-zinc-900 rounded hover:bg-green-600 transition font-semibold cursor-pointer"
               >
                 Salva
               </button>
               <button
                 onClick={handleCancelAll}
-                className="px-3 py-1 bg-amber-500 text-zinc-900 rounded hover:bg-amber-600 transition font-semibold cursor-pointer"
+                className="px-2 py-1 bg-amber-500 text-xs md:text-base text-zinc-900 rounded hover:bg-amber-600 transition font-semibold cursor-pointer"
               >
                 Annulla
               </button>
               {onDeleteRequest && (
                 <button
                   onClick={onDeleteRequest}
-                  className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition font-semibold cursor-pointer"
+                  className="px-2 py-1 bg-red-600 text-xs md:text-base text-white rounded hover:bg-red-700 transition font-semibold cursor-pointer"
                 >
                   Elimina scheda
                 </button>
               )}
-            </>
+            </div>
           )}
         </div>
       </div>
-      <p className="text-gray-500 text-sm mb-2">
-        Creata il {new Date(sheet.createdAt).toLocaleDateString()}
-      </p>
+      
       <ul className="mb-2">
         {(isEditing ? editExercises : sheet.exercises).map((ex, idx) => {
           const details = exerciseDetails[ex.exerciseId];
           return (
-            <li key={idx} className="border-b last:border-b-0 py-2 flex items-center gap-4">
-              {details && details.imageUrl && (
-                <img
-                  src={details.imageUrl}
-                  alt={details.name}
-                  className="w-20 h-16 object-cover rounded"
-                />
-              )}
-              <div>
-                <div className="font-semibold">{details ? details.name : ex.exerciseId}</div>
-                <div className="text-sm text-gray-600">{details?.description}</div>
-                <div>
-                  <span className="font-semibold">Serie:</span>{" "}
+            <li key={idx} className="border-b last:border-b-0 py-2">
+              <div className="flex gap-3">
+                {/* Immagine: nascosta in modalità modifica su mobile */}
+                {details && details.imageUrl && (
+                  <img
+                    src={details.imageUrl}
+                    alt={details.name}
+                    className={`w-20 h-16 object-cover rounded ${isEditing ? 'hidden md:block' : ''}`}
+                  />
+                )}
+                
+                <div className="min-w-0 flex-1">
+                  <div className="font-semibold text-sm break-words">{details ? details.name : ex.exerciseId}</div>
+                  <div className="text-xs text-gray-600 break-words mb-2">{details?.description}</div>
+                  
                   {isEditing ? (
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      value={ex.serie}
-                      onChange={e => {
-                        const value = e.target.value;
-                        if (/^\d*$/.test(value)) {
-                          handleEditChange(idx, "serie", value ? parseInt(value) : 1);
-                        }
-                      }}
-                      className="border bg-gray-100 rounded w-12 mx-1 p-1 appearance-none"
-                    />
+                    <div className="grid grid-cols-1 gap-2">
+                      <div>
+                        <label className="text-xs font-medium block">Serie:</label>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          value={ex.serie}
+                          onChange={e => {
+                            const value = e.target.value;
+                            if (/^\d*$/.test(value)) {
+                              handleEditChange(idx, "serie", value ? parseInt(value) : 1);
+                            }
+                          }}
+                          className="w-full border bg-gray-100 rounded p-1 text-xs appearance-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium block">Ripetizioni:</label>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          value={ex.repetitions}
+                          onChange={e => {
+                            const value = e.target.value;
+                            if (/^\d*$/.test(value)) {
+                              handleEditChange(idx, "repetitions", value ? parseInt(value) : 1);
+                            }
+                          }}
+                          className="w-full border bg-gray-100 rounded p-1 text-xs appearance-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium block">Peso (kg):</label>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          value={ex.weight ?? 0}
+                          onChange={e => {
+                            const value = e.target.value;
+                            if (/^\d*\.?\d*$/.test(value)) {
+                              handleEditChange(idx, "weight", value ? parseFloat(value) : 0);
+                            }
+                          }}
+                          className="w-full border bg-gray-100 rounded p-1 text-xs appearance-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium block">Note:</label>
+                        <input
+                          type="text"
+                          value={ex.notes ?? ""}
+                          onChange={e => handleEditChange(idx, "notes", e.target.value)}
+                          className="w-full border bg-gray-100 rounded p-1 text-xs"
+                        />
+                      </div>
+                      <div className="mt-3">
+                        <button
+                          type="button"
+                          className="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
+                          onClick={() => handleDeleteExercise(idx)}
+                          title="Elimina esercizio"
+                        >
+                          Elimina esercizio
+                        </button>
+                      </div>
+                    </div>
                   ) : (
-                    ex.serie
-                  )}
-                  {" | "}
-                  <span className="font-semibold">Ripetizioni:</span>{" "}
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      value={ex.repetitions}
-                      onChange={e => {
-                        const value = e.target.value;
-                        if (/^\d*$/.test(value)) {
-                          handleEditChange(idx, "repetitions", value ? parseInt(value) : 1);
-                        }
-                      }}
-                      className="border bg-gray-100 rounded w-16 mx-1 p-1 appearance-none"
-                    />
-                  ) : (
-                    ex.repetitions
-                  )}
-                  {" | "}
-                  <span className="font-semibold">Peso:</span>{" "}
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      inputMode="decimal"
-                      value={ex.weight ?? 0}
-                      onChange={e => {
-                        const value = e.target.value;
-                        if (/^\d*\.?\d*$/.test(value)) {
-                          handleEditChange(idx, "weight", value ? parseFloat(value) : 0);
-                        }
-                      }}
-                      className="border bg-gray-100 rounded w-16 mx-1 p-1 appearance-none"
-                    />
-                  ) : (
-                    ex.weight ?? 0
-                  )}
-                  {" Kg  | "}
-                  <span className="font-semibold">Note:</span>{" "}
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={ex.notes ?? ""}
-                      onChange={e => handleEditChange(idx, "notes", e.target.value)}
-                      className="border bg-gray-100 rounded w-64 mx-1 p-1"
-                    />
-                  ) : (
-                    ex.notes ?? ""
-                  )}
-                  {isEditing && (
-                    <button
-                      type="button"
-                      className="ml-2 px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700"
-                      onClick={() => handleDeleteExercise(idx)}
-                      title="Elimina esercizio"
-                    >
-                      Elimina
-                    </button>
+                    <div className="text-xs mt-1 break-words">
+                      <span className="font-semibold">Serie:</span> {ex.serie} | <span className="font-semibold">Ripetizioni:</span> {ex.repetitions} | <span className="font-semibold">Peso:</span> {ex.weight ?? 0} Kg
+                      {ex.notes && (
+                        <> | <span className="font-semibold">Note:</span> {ex.notes}</>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
@@ -320,9 +329,9 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
         })}
       </ul>
 
-      {showModal && (
-        <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50">
-          <div className="bg-white rounded shadow-lg p-6 max-w-md w-full">
+      {showModal && !isEditing && (
+        <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded shadow-lg p-4 md:p-6 max-w-md w-full">
             <h3 className="text-lg font-bold mb-4">Aggiungi esercizio</h3>
             <form onSubmit={handleAddExercise} className="space-y-3">
               <div className="relative search-container">
@@ -342,7 +351,7 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
                 />
                 
                 {showExerciseDropdown && filteredExercises.length > 0 && (
-                  <div className="absolute z-10 mt-1 w-full bg-white rounded-md shadow-lg max-h-60 overflow-auto">
+                  <div className="absolute z-10 mt-1 w-full bg-white rounded-md shadow-lg max-h-48 overflow-auto">
                     <ul className="py-1">
                       {filteredExercises.map(ex => (
                         <li 
@@ -354,11 +363,11 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
                             <img 
                               src={ex.imageUrl} 
                               alt={ex.name} 
-                              className="w-10 h-10 object-cover rounded mr-2" 
+                              className="w-8 h-8 object-cover rounded mr-2" 
                             />
                           )}
                           <div>
-                            <div className="font-medium">{ex.name}</div>
+                            <div className="font-medium text-sm">{ex.name}</div>
                             <div className="text-xs text-gray-500">{ex.group}</div>
                           </div>
                         </li>
@@ -369,7 +378,7 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
               </div>
               
               <div>
-                <span className="font-semibold">Serie:</span>
+                <span className="font-semibold text-sm">Serie:</span>
                 <input
                   type="text"
                   inputMode="numeric"
@@ -386,7 +395,7 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
                 />
               </div>
               <div>
-                <span className="font-semibold">Ripetizioni:</span>
+                <span className="font-semibold text-sm">Ripetizioni:</span>
                 <input
                   type="text"
                   inputMode="numeric"
@@ -403,7 +412,7 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
                 />
               </div>
               <div>
-                <span className="font-semibold">Peso:</span>
+                <span className="font-semibold text-sm">Peso (kg):</span>
                 <input
                   type="text"
                   inputMode="decimal"
@@ -419,7 +428,7 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
                 />
               </div>
               <div>
-                <span className="font-semibold">Note:</span>
+                <span className="font-semibold text-sm">Note:</span>
                 <input
                   type="text"
                   className="w-full p-2 border rounded bg-gray-100"
@@ -431,14 +440,14 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
               <div className="flex justify-end gap-2">
                 <button
                   type="button"
-                  className="px-4 py-2 bg-gray-400 rounded hover:bg-gray-500"
+                  className="px-3 py-1.5 bg-gray-400 rounded hover:bg-gray-500 text-sm"
                   onClick={() => setShowModal(false)}
                 >
                   Annulla
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-amber-500 text-zinc-900 rounded hover:bg-amber-600"
+                  className="px-3 py-1.5 bg-amber-500 text-zinc-900 rounded hover:bg-amber-600 text-sm"
                   disabled={!selectedExercise}
                 >
                   Aggiungi
