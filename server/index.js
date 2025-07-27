@@ -8,7 +8,7 @@ const app = express()
 
 app.use('/uploads', express.static('uploads'))
 
-app.use(cors({  origin: 'https://wellum.vercel.app'})); //change in production 
+app.use(cors({  origin: ['http://localhost:5173', 'https://wellum.vercel.app']})); //change in production 
 
 const user = require('./routes/userRoutes')
 const exercise = require('./routes/exerciseRoutes')

@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import Sidebar from "../components/Sidebar";
+import { Link } from "react-router-dom";
 const API_URL = import.meta.env.VITE_URL_SERVER 
 const UPLOAD_CODE = import.meta.env.VITE_DELETE_CODE
 
@@ -202,8 +203,23 @@ export default function AddExercise() {
 
   return (
     <div className="flex flex-col min-h-screen bg-zinc-600">   
-      <div className="fixed top-0 left-0 h-screen w-64 z-10">
+      {/* Sidebar desktop */}
+      <div className="fixed top-0 left-0 h-screen w-64 z-10 hidden md:block">
         <Sidebar />
+      </div>
+      
+      {/* Header mobile con hamburger menu */}
+      <div className="fixed top-0 left-0 right-0 bg-zinc-800 p-3 flex items-center z-20 md:hidden">
+          <Sidebar />
+
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        
+        <Link to="/" className="flex items-center">
+          <img src="/assets/pictures/logoAmberTransp.png" className="ml-6 h-8" alt="Wellum logo" />
+        </Link>
+        <h1 className="text-xl font-bold text-amber-500 ml-3">Aggiungi Esercizi</h1>
       </div>
       
       <div className="m-5 p-6 bg-zinc-200 rounded shadow mt-60 p-4 md:ml-70 md:p-6 md:ml-64">

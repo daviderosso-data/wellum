@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useUser } from "@clerk/clerk-react";
 import Sidebar from "../components/Sidebar";
 import SheetCard from "../components/sheetCard";
+import { Link } from "react-router-dom";
 const API_URL = import.meta.env.VITE_URL_SERVER 
 
 type Exercise = {
@@ -177,10 +178,27 @@ export default function ExercisesSheets() {
 
   return (
     <div className="flex min-h-screen bg-zinc-600">
-      <div className="fixed top-0 left-0 h-screen w-64 z-10">
+      
+
+      <div className="flex-1 p-6 md:ml-64">
+       { /* Sidebar desktop */}
+      <div className="fixed top-0 left-0 h-screen w-64 z-10 hidden md:block">
         <Sidebar />
       </div>
-      <div className="flex-1 p-6 md:ml-64">
+      
+      {/* Header mobile con hamburger menu */}
+      <div className="fixed top-0 left-0 right-0 bg-zinc-800 p-3 flex items-center z-20 md:hidden">
+          <Sidebar />
+
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        
+        <Link to="/" className="flex items-center">
+          <img src="/assets/pictures/logoAmberTransp.png" className="ml-6 h-8" alt="Wellum logo" />
+        </Link>
+        <h1 className="text-xl font-bold text-amber-500 ml-3">Schede</h1>
+      </div>
         <div className="flex justify-between items-center mb-6 mt-20">
           <h1 className="text-3xl text-amber-500 font-bold">Le tue schede</h1>
           <button

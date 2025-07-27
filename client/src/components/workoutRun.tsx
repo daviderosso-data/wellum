@@ -221,6 +221,12 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
   }
 
   const skipExercise = () => {
+    setIsRunning(false)
+  
+  if (intervalRef.current) {
+    clearInterval(intervalRef.current)
+    intervalRef.current = null
+  }
     nextExercise()
   }
 
