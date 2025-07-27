@@ -17,7 +17,6 @@ const Sidebar = () => {
 
   return (
     <>
-      {/* Hamburger for mobile */}
       <div className="md:hidden fixed top-4 left-4 z-50">
         <button
           onClick={() => setOpen(true)}
@@ -28,7 +27,6 @@ const Sidebar = () => {
         </button>
       </div>
 
-      {/* Sidebar desktop */}
       <div className="hidden md:block w-64 h-screen bg-zinc-800 shadow-md p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex"> <img src="assets/pictures/logoAmberTransp.png" className="h-7"></img>  <h1 className="text-xl font-bold font-display text-amber-500 curosor-pointer"><Link to="/">Wellum</Link></h1></div>
@@ -110,12 +108,10 @@ const Sidebar = () => {
         </div>
       </nav>
     </div>
-    {/* Click outside to close */}
     <div className="flex-1" onClick={() => setOpen(false)} />
   </div>
 )}
 
-      {/* Animazione slide-in */}
       <style>
         {`
           @keyframes slide-in-left {
@@ -123,7 +119,7 @@ const Sidebar = () => {
             to { transform: translateX(0); }
           }
           .animate-slide-in-left {
-            animation: slide-in-left 0.2s cubic-bezier(0.4,0,0.2,1);
+            animation: slide-in-left 0.3s cubic-bezier(0.4,0,0.2,1);
           }
         `}
       </style>

@@ -1,5 +1,4 @@
 
-
 function HeroSection() {
   return (
     <section className="relative h-[600px] w-screen drop-shadow-xl">
@@ -13,10 +12,12 @@ function HeroSection() {
         Il tuo browser non supporta il video.
       </video>
       <div className="relative z-10 flex flex-col items-center justify-center h-full bg-zinc-400/40 space-y-6">
-      
+      <div className="flex items-center mb-8">
+      <img src="assets/pictures/logoBlackTransp.png" className="h-30 mb-4"></img>
         <h1 className="text-zinc-900 text-6xl md:text-8xl font-bold font-display mb-4">
           Wellum
         </h1>
+        </div>
        
         
          <p className="text-3xl font-body text-zinc-900 ">

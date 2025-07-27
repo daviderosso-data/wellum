@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import AddExerciseModal from "./AddExerciseModal";
+
 const API_URL = import.meta.env.VITE_URL_SERVER 
 
 type ExerciseItem = {
@@ -33,19 +35,8 @@ type Props = {
 export default function SheetCard({ sheet, onDeleteRequest }: Props) {
   const [exerciseDetails, setExerciseDetails] = useState<Record<string, ExerciseDetails>>({});
   const [showModal, setShowModal] = useState(false);
-  const [allExercises, setAllExercises] = useState<ExerciseDetails[]>([]);
-  const [selectedExercise, setSelectedExercise] = useState("");
-  const [serie, setSerie] = useState<number>(3);
-  const [repetitions, setRepetitions] = useState<number>(10);
-  const [weight, setWeight] = useState<number>(0);
-  const [notes, setNotes] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [editExercises, setEditExercises] = useState<ExerciseItem[]>([]);
-  
-  // Stati per la ricerca esercizi
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filteredExercises, setFilteredExercises] = useState<ExerciseDetails[]>([]);
-  const [showExerciseDropdown, setShowExerciseDropdown] = useState(false);
 
   useEffect(() => {
     async function fetchDetails() {
@@ -68,49 +59,22 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
     fetchDetails();
   }, [sheet.exercises]);
 
-  useEffect(() => {
-    fetch(`${API_URL}/api/exercises`)
-      .then(res => res.json())
-      .then(data => setAllExercises(data))
-      .catch(() => setAllExercises([]));
-  }, []);
-  
-  // Filtra gli esercizi in base alla ricerca
-  useEffect(() => {
-    if (searchQuery.trim() === "") {
-      setFilteredExercises([]);
-      return;
+  const handleAddExercise = async (newExercise: ExerciseItem) => {
+    try {
+      await fetch(`${API_URL}/api/sheet/${sheet._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...sheet,
+          exercises: [...sheet.exercises, newExercise],
+        }),
+      });
+      setShowModal(false);
+      window.location.reload();
+    } catch (error) {
+      console.error("Errore durante l'aggiunta dell'esercizio:", error);
+      alert("Si è verificato un errore. Riprova.");
     }
-    
-    const query = searchQuery.toLowerCase();
-    const filtered = allExercises.filter(ex => 
-      ex.name.toLowerCase().includes(query) || 
-      (ex.group && ex.group.toLowerCase().includes(query))
-    );
-    
-    setFilteredExercises(filtered);
-  }, [searchQuery, allExercises]);
-
-  const handleAddExercise = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedExercise) return;
-    const newExercise: ExerciseItem = {
-      exerciseId: selectedExercise,
-      serie,
-      repetitions,
-      weight,
-      notes,
-    };
-    await fetch(`${API_URL}/api/sheet/${sheet._id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...sheet,
-        exercises: [...sheet.exercises, newExercise],
-      }),
-    });
-    setShowModal(false);
-    window.location.reload();
   };
 
   const handleEditAll = () => {
@@ -154,27 +118,6 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
     setEditExercises(prev => prev.filter((_, i) => i !== idx));
   };
   
-  const selectExercise = (exercise: ExerciseDetails) => {
-    setSelectedExercise(exercise._id);
-    setSearchQuery(exercise.name);
-    setShowExerciseDropdown(false);
-  };
-  
-  // Chiudi il dropdown quando si clicca fuori
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (showExerciseDropdown) {
-        const target = e.target as HTMLElement;
-        if (!target.closest('.search-container')) {
-          setShowExerciseDropdown(false);
-        }
-      }
-    };
-    
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showExerciseDropdown]);
-
   return (
     <div className="bg-zinc-300 rounded shadow p-4 overflow-hidden">
       <div className="flex flex-col mb-2">
@@ -183,7 +126,6 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
           Creata il {new Date(sheet.createdAt).toLocaleDateString()}
         </p>
         
-        {/* Pulsanti - riorganizzati per mobile e nascosto "Aggiungi esercizio" in modalità modifica */}
         <div className="flex flex-wrap gap-2">
           {!isEditing && (
             <button
@@ -234,7 +176,6 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
           return (
             <li key={idx} className="border-b last:border-b-0 py-2">
               <div className="flex gap-3">
-                {/* Immagine: nascosta in modalità modifica su mobile */}
                 {details && details.imageUrl && (
                   <img
                     src={details.imageUrl}
@@ -329,134 +270,11 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
         })}
       </ul>
 
-      {showModal && !isEditing && (
-        <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded shadow-lg p-4 md:p-6 max-w-md w-full">
-            <h3 className="text-lg font-bold mb-4">Aggiungi esercizio</h3>
-            <form onSubmit={handleAddExercise} className="space-y-3">
-              <div className="relative search-container">
-                <span className="font-semibold">Esercizio:</span>
-                <input
-                  type="text"
-                  className="w-full p-2 border rounded bg-gray-100"
-                  placeholder="Cerca esercizio..."
-                  value={searchQuery}
-                  onChange={e => {
-                    setSearchQuery(e.target.value);
-                    setShowExerciseDropdown(true);
-                    setSelectedExercise("");
-                  }}
-                  onFocus={() => setShowExerciseDropdown(true)}
-                  required
-                />
-                
-                {showExerciseDropdown && filteredExercises.length > 0 && (
-                  <div className="absolute z-10 mt-1 w-full bg-white rounded-md shadow-lg max-h-48 overflow-auto">
-                    <ul className="py-1">
-                      {filteredExercises.map(ex => (
-                        <li 
-                          key={ex._id} 
-                          className="px-3 py-2 hover:bg-gray-100 cursor-pointer flex items-center"
-                          onClick={() => selectExercise(ex)}
-                        >
-                          {ex.imageUrl && (
-                            <img 
-                              src={ex.imageUrl} 
-                              alt={ex.name} 
-                              className="w-8 h-8 object-cover rounded mr-2" 
-                            />
-                          )}
-                          <div>
-                            <div className="font-medium text-sm">{ex.name}</div>
-                            <div className="text-xs text-gray-500">{ex.group}</div>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-              
-              <div>
-                <span className="font-semibold text-sm">Serie:</span>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  className="w-full p-2 border rounded bg-gray-100 appearance-none"
-                  placeholder="Serie"
-                  value={serie}
-                  onChange={e => {
-                    const value = e.target.value;
-                    if (/^\d*$/.test(value)) {
-                      setSerie(value ? parseInt(value) : 0);
-                    }
-                  }}
-                  required
-                />
-              </div>
-              <div>
-                <span className="font-semibold text-sm">Ripetizioni:</span>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  className="w-full p-2 border rounded bg-gray-100 appearance-none"
-                  placeholder="Ripetizioni"
-                  value={repetitions}
-                  onChange={e => {
-                    const value = e.target.value;
-                    if (/^\d*$/.test(value)) {
-                      setRepetitions(value ? parseInt(value) : 0);
-                    }
-                  }}
-                  required
-                />
-              </div>
-              <div>
-                <span className="font-semibold text-sm">Peso (kg):</span>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  className="w-full p-2 border rounded bg-gray-100 appearance-none"
-                  placeholder="Peso (kg)"
-                  value={weight}
-                  onChange={e => {
-                    const value = e.target.value;
-                    if (/^\d*\.?\d*$/.test(value)) {
-                      setWeight(value ? parseFloat(value) : 0);
-                    }
-                  }}
-                />
-              </div>
-              <div>
-                <span className="font-semibold text-sm">Note:</span>
-                <input
-                  type="text"
-                  className="w-full p-2 border rounded bg-gray-100"
-                  placeholder="Note"
-                  value={notes}
-                  onChange={e => setNotes(e.target.value)}
-                />
-              </div>
-              <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  className="px-3 py-1.5 bg-gray-400 rounded hover:bg-gray-500 text-sm"
-                  onClick={() => setShowModal(false)}
-                >
-                  Annulla
-                </button>
-                <button
-                  type="submit"
-                  className="px-3 py-1.5 bg-amber-500 text-zinc-900 rounded hover:bg-amber-600 text-sm"
-                  disabled={!selectedExercise}
-                >
-                  Aggiungi
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <AddExerciseModal 
+        isOpen={showModal && !isEditing}
+        onClose={() => setShowModal(false)}
+        onAddExercise={handleAddExercise}
+      />
     </div>
   );
 }

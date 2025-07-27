@@ -1,7 +1,7 @@
 import { useState } from "react"
+import VideoModal from "./VideoModal"
+import DeleteExerciseModal from "./DeleteExerciseModal"
 
-const API_URL = import.meta.env.VITE_URL_SERVER 
-const DELETE_CODE = import.meta.env.VITE_DELETE_CODE 
 
 type Exercise = {
     _id: string
@@ -27,20 +27,11 @@ type Props = {
 const ExerciseList = ({ exercises }: Props) => {
   const [openVideo, setOpenVideo] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [deleteCode, setDeleteCode] = useState("");
-  const [deleteError, setDeleteError] = useState("");
-  const [deleteSuccess, setDeleteSuccess] = useState(false); // Nuovo stato per il successo
 
-  function extractYouTubeId(url: string) {
-    const match = url.match(
-      /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))((\w|-){11})/
-    );
-    return match ? match[1] : "";
-  }
+ 
   
   return (
     <>
-      {/* Layout a griglia responsive */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-7xl mx-auto px-4">
         {exercises.map((ex) => (
           <div 
@@ -89,108 +80,19 @@ const ExerciseList = ({ exercises }: Props) => {
         ))}
       </div>
       
-      {/* Modale video */}
-      {openVideo && (
-        <div className="fixed inset-0 bg-[rgba(0,0,0,0.8)] flex items-center justify-center z-50">
-          <div className="bg-white rounded shadow-lg p-4 relative max-w-2xl w-full">
-            <button
-              onClick={() => setOpenVideo(null)}
-              className="absolute top-2 right-2 text-gray-700 hover:text-red-600 text-2xl font-bold"
-            >
-              &times;
-            </button>
-            <div className="aspect-w-16 aspect-h-9 w-full">
-              <iframe
-                src={`https://www.youtube.com/embed/${extractYouTubeId(openVideo)}`}
-                title="Video esercizio"
-                allow="autoplay; encrypted-media"
-                allowFullScreen
-                className="w-full h-64 md:h-96"
-              ></iframe>
-            </div>
-          </div>
-        </div>
-      )}
+      {openVideo && <VideoModal videoUrl={openVideo} onClose={() => setOpenVideo(null)} />}
       
-      {/* Modale eliminazione con codice di sicurezza */}
+      
+      
       {deleteId && (
-        <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50">
-          <div className="bg-white rounded shadow-lg p-6 max-w-sm w-full text-center">
-            <p className="mb-4 text-lg">
-              {deleteSuccess 
-                ? "✅ Esercizio eliminato con successo!" 
-                : "Sei sicuro di voler eliminare questo esercizio?"}
-            </p>
-            
-            {!deleteSuccess && (
-              <div className="mb-4">
-                <label className="block text-gray-700 text-sm font-bold mb-2">
-                  Inserisci il codice di sicurezza
-                </label>
-                <input
-                  type="password"
-                  value={deleteCode}
-                  onChange={(e) => setDeleteCode(e.target.value)}
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  placeholder="Codice di sicurezza"
-                />
-                {deleteError && (
-                  <p className="text-red-600 text-xs italic mt-1">{deleteError}</p>
-                )}
-              </div>
-            )}
-            
-            {!deleteSuccess && (
-              <div className="flex justify-center gap-4">
-                <button
-                  className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-                  onClick={async () => {
-                    if (deleteCode !== DELETE_CODE) {
-                      setDeleteError("Codice non valido!");
-                      return;
-                    }
-                    
-                    try {
-                      const response = await fetch(`${API_URL}/api/exercises/${deleteId}`, { 
-                        method: "DELETE" 
-                      });
-                      
-                      if (response.ok) {
-                        // Mostra messaggio di successo
-                        setDeleteError("");
-                        setDeleteSuccess(true);
-                        
-                        // Dopo 2 secondi, chiudi la modale e ricarica la pagina
-                        setTimeout(() => {
-                          setDeleteId(null);
-                          setDeleteCode("");
-                          setDeleteSuccess(false);
-                          window.location.reload(); // Usa reload invece di navigate per un refresh completo
-                        }, 2000);
-                      } else {
-                        setDeleteError("Errore durante l'eliminazione. Riprova.");
-                      }
-                    } catch {
-                      setDeleteError("Errore di rete. Riprova.");
-                    }
-                  }}
-                >
-                  Sì, elimina
-                </button>
-                <button
-                  className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
-                  onClick={() => {
-                    setDeleteId(null);
-                    setDeleteCode("");
-                    setDeleteError("");
-                  }}
-                >
-                  Annulla
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
+        <DeleteExerciseModal
+          exerciseId={deleteId}
+          onClose={() => setDeleteId(null)}
+          onDeleted={() => {
+          setDeleteId(null);
+            window.location.reload();
+          }}
+        />
       )}
     </>
   )

@@ -1,9 +1,1 @@
 @import "tailwindcss";
-
-@theme {
-  --color-regal-blue: #3B4C75; 
-  --color-yellow-gold: #F5DD00;
-  --color-green: #9BF500;
-  --color-purple: #4E35A0;
-}
-

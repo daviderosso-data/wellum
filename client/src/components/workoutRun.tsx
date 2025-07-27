@@ -17,7 +17,6 @@ type ExerciseData = {
   imageUrl?: string
 }
 
-// Modale per modificare il carico
 const WeightModal = ({ isOpen, currentWeight, onSave, onClose }: { 
   isOpen: boolean, 
   currentWeight: number, 
@@ -40,7 +39,6 @@ const WeightModal = ({ isOpen, currentWeight, onSave, onClose }: {
   value={weight}
   onChange={(e) => {
     const value = e.target.value;
-    // Accetta solo numeri e un punto decimale
     if (/^\d*\.?\d*$/.test(value)) {
       setWeight(value);
     }
@@ -86,7 +84,6 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
   const [phase, setPhase] = useState<'idle' | 'workout' | 'rest'>('idle')
   const { user } = useUser();
   
-  // Stato per la modale di modifica del carico
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [currentWeight, setCurrentWeight] = useState(0);
   
@@ -95,20 +92,17 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
   const current = exercises[currentIndex]
   const totalReps = current?.repetitions || 0
 
-  // Fetch exercises when component mounts or sheetId changes
   useEffect(() => {
     fetch(`${API_URL}/api/sheet/${sheetId}`)
       .then(res => res.json())
       .then(data => {
         setExercises(data.exercises || []);
-        // Imposta il peso iniziale dall'esercizio corrente
         if (data.exercises && data.exercises.length > 0) {
           setCurrentWeight(data.exercises[0].weight || 0);
         }
       })
   }, [sheetId])
 
-  // Fetch exercise data when currentIndex changes
   useEffect(() => {
     const loadExerciseData = async () => {
       const ex = exercises[currentIndex]
@@ -117,7 +111,6 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
           const res = await fetch(`${API_URL}/api/exercises/${ex.exerciseId}`)
           const data = await res.json()
           setExerciseData(data)
-          // Aggiorna il peso corrente quando cambia l'esercizio
           setCurrentWeight(ex.weight || 0)
         } catch {
           setExerciseData(null)
@@ -127,7 +120,6 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
     if (exercises.length > 0) loadExerciseData()
   }, [currentIndex, exercises])
 
-  // Timer logic
   useEffect(() => {
     if (isRunning) {
       intervalRef.current = setInterval(() => {
@@ -141,32 +133,26 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
     return () => clearInterval(intervalRef.current!)
   }, [isRunning, phase])
 
-  // when workout phase changes, reset timer
   useEffect(() => {
     if (phase === 'rest' && timer <= 0 && isRunning) {
       completeRep()
     }
   }, [timer, phase, isRunning])
 
-  // Inizia l'allenamento direttamente senza mostrare la modale
   const startWorkout = () => {
     setTimer(0);
     setIsRunning(true);
     setPhase('workout');
   }
 
-  // Funzione per salvare il peso e basta (senza avviare l'allenamento)
   const saveWeight = (weight: number) => {
     setCurrentWeight(weight);
     setShowWeightModal(false);
     
-    // Salva il peso nella scheda
     updateExerciseWeight(weight);
   }
 
-  // Funzione per aggiornare il peso dell'esercizio corrente
   const updateExerciseWeight = async (weight: number) => {
-    // Crea una copia degli esercizi per modificarla
     const updatedExercises = [...exercises];
     updatedExercises[currentIndex] = {
       ...updatedExercises[currentIndex],
@@ -175,7 +161,6 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
     
     setExercises(updatedExercises);
     
-    // Salva sul server
     try {
       await fetch(`${API_URL}/api/sheet/${sheetId}`, {
         method: "PUT",
@@ -201,7 +186,6 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
       setCurrentRep(r => r + 1)
       setPhase('idle')
       setTimer(0)
-      // Non mostrare più automaticamente la modale
     } else {
       nextExercise()
     }
@@ -214,7 +198,6 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
       setTimer(0)
       setIsRunning(false)
       setPhase('idle')
-      // Non mostrare più automaticamente la modale
     } else {
       setIsComplete(true)
     }
@@ -240,14 +223,12 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
     return 'Continua'
   }
 
-  // Handle main button click based on current phase
   const handleMainButton = () => {
     if (phase === 'idle') startWorkout()
     else if (phase === 'workout') startRest()
     else if (phase === 'rest') completeRep()
   }
 
-  // Save workout to calendar
   const handleSaveWorkout = async () => {
     if (!user?.id) return;
     await fetch(`${API_URL}/api/workouts`, {
@@ -338,11 +319,10 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
         </div>
       </div>
 
-      {/* Modale per modificare il carico */}
       <WeightModal 
         isOpen={showWeightModal}
         currentWeight={currentWeight}
-        onSave={saveWeight} // Ora usa saveWeight invece di saveWeightAndStart
+        onSave={saveWeight} 
         onClose={() => setShowWeightModal(false)}
       />
 

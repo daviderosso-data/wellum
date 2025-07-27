@@ -11,7 +11,7 @@ type Sheet = {
 type Props = {
   userId: string
   onStart: (sheetId: string, restTime: number) => void
-  onBack?: () => void // callback to go back
+  onBack?: () => void 
 }
 
 const WorkoutSetup = ({ userId, onStart, onBack }: Props) => {
@@ -37,7 +37,6 @@ const WorkoutSetup = ({ userId, onStart, onBack }: Props) => {
       <div className="bg-zinc-600 p-6 rounded shadow max-w-lg w-full space-y-6 text-center">
         <h1 className="text-2xl text-amber-500 font-bold">Iniziamo!</h1>
 
-        {/* Selezione scheda */}
         <div className="text-left bg-zinc-400 p-4 rounded mb-4">
           <label className="block text-sm font-medium text-zinc-900 mb-1">
             Scegli una delle tue schede
@@ -56,7 +55,6 @@ const WorkoutSetup = ({ userId, onStart, onBack }: Props) => {
           </select>
         </div>
 
-        {/* Set recovery time */}
         <div className="text-left">
           <label className="block text-sm font-medium text-white mb-1">
             Scegli il tempo di recupero (minuti)
