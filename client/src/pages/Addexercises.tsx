@@ -201,12 +201,12 @@ export default function AddExercise() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-600 p-4">   
+    <div className="flex flex-col min-h-screen bg-zinc-600">   
       <div className="fixed top-0 left-0 h-screen w-64 z-10">
         <Sidebar />
       </div>
       
-      <div className="max-w-3xl mx-auto p-6 bg-zinc-200 rounded shadow">
+      <div className="m-5 p-6 bg-zinc-200 rounded shadow mt-60 p-4 md:ml-70 md:p-6 md:ml-64">
         <h2 className="text-2xl font-bold mb-4">Aggiungi Esercizio</h2>
         <form onSubmit={validateFormAndShowSecurityModal} encType="multipart/form-data">
           <input

@@ -6,9 +6,9 @@ const mongoose = require('mongoose');
 
 const app = express()
 
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static('uploads'))
 
-app.use(cors({  origin: '*'})); //change in production 
+app.use(cors({  origin: 'https://wellum.vercel.app/'})); //change in production 
 
 const user = require('./routes/userRoutes')
 const exercise = require('./routes/exerciseRoutes')
