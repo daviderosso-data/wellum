@@ -29,7 +29,6 @@ const SignUpSuccess = () => {
           const result = await res.json()
           console.log('Utente salvato:', result)
 
-          // Dopo aver salvato → manda in Dashboard
           setTimeout(()=>{navigate('/')}, 3000)
         } catch (err) {
           console.error('Errore salvataggio utente:', err)

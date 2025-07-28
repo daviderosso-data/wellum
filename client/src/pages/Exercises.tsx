@@ -43,9 +43,7 @@ export default function Exercises() {
     setCurrentPage(1);
   }, [groupFilter]);
 
-  // Funzione per renderizzare i pulsanti di paginazione
   const renderPaginationButtons = () => {
-    // Su mobile, mostra solo pulsanti avanti/indietro e pagina corrente
     if (window.innerWidth < 640) {
       return (
         <>
@@ -70,20 +68,17 @@ export default function Exercises() {
       );
     }
 
-    // Su desktop, mostra tutti i pulsanti numerati
-    // Limita il numero di pulsanti visualizzati per schermi più grandi
+    
     const pageButtons = [];
     const maxVisibleButtons = 5;
     
     let startPage = Math.max(1, currentPage - Math.floor(maxVisibleButtons / 2));
     const endPage = Math.min(totalPages, startPage + maxVisibleButtons - 1);
     
-    // Aggiusta l'intervallo se siamo vicino alla fine
     if (endPage - startPage + 1 < maxVisibleButtons) {
       startPage = Math.max(1, endPage - maxVisibleButtons + 1);
     }
     
-    // Aggiungi pulsante per prima pagina se necessario
     if (startPage > 1) {
       pageButtons.push(
         <button
@@ -99,7 +94,6 @@ export default function Exercises() {
       }
     }
     
-    // Aggiungi pulsanti numerati per le pagine visibili
     for (let i = startPage; i <= endPage; i++) {
       pageButtons.push(
         <button
@@ -112,7 +106,6 @@ export default function Exercises() {
       );
     }
     
-    // Aggiungi pulsante per ultima pagina se necessario
     if (endPage < totalPages) {
       if (endPage < totalPages - 1) {
         pageButtons.push(<span key="ellipsis2" className="px-2">...</span>);
@@ -151,12 +144,10 @@ export default function Exercises() {
 
   return (
     <div className="flex min-h-screen bg-zinc-600">
-      {/* Sidebar desktop */}
       <div className="fixed top-0 left-0 h-screen w-64 z-10 hidden md:block">
         <Sidebar />
       </div>
       
-      {/* Header mobile con hamburger menu */}
       <div className="fixed top-0 left-0 right-0 bg-zinc-800 p-3 flex items-center z-20 md:hidden">
           <Sidebar />
 
@@ -189,7 +180,6 @@ export default function Exercises() {
         
         <ExerciseList exercises={paginatedExercises} />
         
-        {/* Paginazione migliorata */}
         <div className="flex flex-wrap justify-center mt-6 gap-2">
           {renderPaginationButtons()}
         </div>

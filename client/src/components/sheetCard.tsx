@@ -173,20 +173,36 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
       <ul className="mb-2">
         {(isEditing ? editExercises : sheet.exercises).map((ex, idx) => {
           const details = exerciseDetails[ex.exerciseId];
+          const isExerciseDeleted = !details;
+
           return (
             <li key={idx} className="border-b last:border-b-0 py-2">
               <div className="flex gap-3">
-                {details && details.imageUrl && (
+               {isExerciseDeleted ? (
                   <img
-                    src={details.imageUrl}
-                    alt={details.name}
+                    src="/assets/pictures/404.png"
+                    alt="Esercizio non disponibile"
                     className={`w-20 h-16 object-cover rounded ${isEditing ? 'hidden md:block' : ''}`}
                   />
+                ) : (
+                  details.imageUrl && (
+                    <img
+                      src={details.imageUrl}
+                      alt={details.name}
+                      className={`w-20 h-16 object-cover rounded ${isEditing ? 'hidden md:block' : ''}`}
+                    />
+                  )
                 )}
                 
                 <div className="min-w-0 flex-1">
-                  <div className="font-semibold text-sm break-words">{details ? details.name : ex.exerciseId}</div>
-                  <div className="text-xs text-gray-600 break-words mb-2">{details?.description}</div>
+                  {isExerciseDeleted ? (
+                    <div className="text-red-600 font-semibold">Esercizio eliminato dal Database</div>
+                  ) : (
+                    <>
+                      <div className="font-semibold text-sm break-words">{details ? details.name : ex.exerciseId}</div>
+                      <div className="text-xs text-gray-600 break-words mb-2">{details?.description}</div>
+                    </>
+                  )}
                   
                   {isEditing ? (
                     <div className="grid grid-cols-1 gap-2">
@@ -256,13 +272,15 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
                       </div>
                     </div>
                   ) : (
-                    <div className="text-xs mt-1 break-words">
+                      isExerciseDeleted ? (null) :(<div className="text-xs mt-1 break-words">
                       <span className="font-semibold">Serie:</span> {ex.serie} | <span className="font-semibold">Ripetizioni:</span> {ex.repetitions} | <span className="font-semibold">Peso:</span> {ex.weight ?? 0} Kg
                       {ex.notes && (
                         <> | <span className="font-semibold">Note:</span> {ex.notes}</>
                       )}
-                    </div>
+                    </div>) 
                   )}
+                
+                  
                 </div>
               </div>
             </li>

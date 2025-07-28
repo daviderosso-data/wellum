@@ -9,7 +9,7 @@ import AddExercise from './pages/Addexercises'
 import ExercisesSheets from './pages/exercisesSheets'
 import AgendaPage from './pages/Agenda'
 import WorkoutGuide from './pages/workoutGuide'
-
+import NotFound from './pages/NotFound'
 export default function App() {
   return (
       <Routes>
@@ -22,6 +22,7 @@ export default function App() {
         <Route path="/exercisesheet" element={<ProtectedRoute><ExercisesSheets /></ProtectedRoute>} />
         <Route path="/agenda" element={<ProtectedRoute><AgendaPage /></ProtectedRoute>} />
         <Route path="/workoutguide" element={<ProtectedRoute><WorkoutGuide /></ProtectedRoute>} />
+       <Route path="*" element={<NotFound/> } />
 
 
       </Routes>

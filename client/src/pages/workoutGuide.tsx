@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useUser } from '@clerk/clerk-react'
 import WorkoutSetup from '../components/workoutSetup'
 import WorkoutRun from '../components/workoutRun'
-// import WorkoutRunner from '../components/WorkoutRunner'
 
 const WorkoutGuide = () => {
   const { user } = useUser()
@@ -23,7 +22,7 @@ const WorkoutGuide = () => {
   sheetId={selectedSheetId}
   restTime={restTime}
   onFinish={() => {
-    setStep('setup') // o mostra una schermata di completamento
+    setStep('setup') 
   }}
 />
   )

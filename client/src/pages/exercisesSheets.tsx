@@ -181,12 +181,10 @@ export default function ExercisesSheets() {
       
 
       <div className="flex-1 p-6 md:ml-64">
-       { /* Sidebar desktop */}
       <div className="fixed top-0 left-0 h-screen w-64 z-10 hidden md:block">
         <Sidebar />
       </div>
       
-      {/* Header mobile con hamburger menu */}
       <div className="fixed top-0 left-0 right-0 bg-zinc-800 p-3 flex items-center z-20 md:hidden">
           <Sidebar />
 
