@@ -20,8 +20,6 @@ La piattaforma nella sua versione 1.0.0 permette di creare schede di allenamento
 
 - React Router per il routing client‑side
 
-- Chart.js (via react-chartjs-2) per la visualizzazione di dati
-
 ## Backend
 ### Node.js con Express
 
