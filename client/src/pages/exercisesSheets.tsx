@@ -1,3 +1,12 @@
+//  ExercisesSheets
+// This page allows users to manage their workout sheets, including creating new sheets, adding exercises,
+// and deleting existing sheets. It fetches available exercises from an API and allows users to select
+// exercises to add to their sheets. The page is styled with Tailwind CSS for a modern look and is responsive to different screen sizes.
+// It includes a sidebar for navigation and uses modals for creating sheets and confirming deletions.
+// The page also supports searching for exercises and displaying them in a dropdown menu for easy selection.
+
+
+
 import { useEffect, useState } from "react";
 import { useUser } from "@clerk/clerk-react";
 import Sidebar from "../components/Sidebar";
@@ -76,7 +85,6 @@ export default function ExercisesSheets() {
     }
   }, [showModal]);
   
-  // Filtra gli esercizi in base alla ricerca
   useEffect(() => {
     if (searchQuery.trim() === "") {
       setFilteredExercises([]);
@@ -140,7 +148,6 @@ export default function ExercisesSheets() {
       }
     ]);
     
-    // Reset form
     setCurrentExercise(null);
     setSearchQuery("");
     setCurrentSerie(3);

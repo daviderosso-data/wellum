@@ -1,3 +1,11 @@
+// Modal to add an exercise to a workout sheet
+// This component allows users to search and select exercises, specify sets, reps, weight, and notes,
+// and submit the exercise to be added to a workout sheet.
+// It includes a search feature to filter exercises by name or muscle group, and displays a dropdown
+// with matching exercises. The form is reset after submission.
+// The component uses React hooks for state management and side effects, and fetches exercise data from
+// an API endpoint.
+
 import { useState, useEffect } from "react";
 
 const API_URL = import.meta.env.VITE_URL_SERVER;

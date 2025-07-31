@@ -1,3 +1,10 @@
+// SecurityModal
+// This component displays a modal for confirming actions that require security verification.(termporary solution)
+// It prompts the user to enter a security code before proceeding with the action.
+// The modal includes a title, an input field for the security code, and buttons for confirming or canceling the action.
+// It uses React hooks for state management and is styled with Tailwind CSS for a modern look.
+
+
 import React from "react";
 
 interface SecurityModalProps {

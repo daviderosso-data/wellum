@@ -1,3 +1,8 @@
+// Sidebar
+// This component renders a sidebar with navigation links and user information.
+// It includes links to various sections of the application, such as the exercise sheet, workout guide, agenda, and exercises.
+// The sidebar is responsive and includes a toggle button for mobile view.
+
 import { Link, useLocation } from 'react-router-dom'
 import { FaHome, FaBars, FaTimes } from 'react-icons/fa'
 import { UserButton, useUser } from '@clerk/clerk-react'

@@ -1,3 +1,6 @@
+// 404 Not Found Page
+// This page is displayed when a user navigates to a non-existent route in the application.
+
 export default function NotFound() {
   return (
     <div className=" flex flex-col items-center justify-center w-screen h-screen bg-zinc-800 ">

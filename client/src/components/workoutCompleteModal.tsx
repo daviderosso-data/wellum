@@ -1,3 +1,10 @@
+// WorkoutCompleteModal
+// This component displays a modal when the workout is complete.
+// It shows the total time spent on the workout and provides options to save the workout to the calendar or return to the dashboard.
+// The modal is styled with Tailwind CSS and uses Headless UI for transitions and accessibility.
+// It includes a title, a formatted time display, and buttons for saving or closing the modal.
+// The time is formatted in minutes and seconds for better readability.
+
 import { TransitionChild, Dialog, DialogPanel, DialogTitle, Transition } from '@headlessui/react'
 import { Fragment } from 'react'
 

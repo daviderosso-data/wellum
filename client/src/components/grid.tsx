@@ -1,3 +1,13 @@
+// FeaturesSection.tsx
+// This component displays a section with features of the application.
+// Made From Aceternity Template https://ui.aceternity.com/components/feature-sections
+// It includes a grid layout with feature cards, each containing a title, description, and a skeleton for future content.
+// The section is styled with Tailwind CSS and includes a globe animation in the background.
+// The component is responsive and adapts to different screen sizes, providing a user-friendly interface.
+
+
+
+
 import React from "react";
 import { cn } from "../lib/utils";
 import createGlobe from "cobe";

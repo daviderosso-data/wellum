@@ -1,3 +1,10 @@
+// SheetCard
+// This component displays a card for a workout sheet, allowing users to view, edit, and manage exercises.
+// It fetches exercise details from an API and allows adding, editing, and deleting exercises.
+// The component is responsive and adapts to different screen sizes, providing a user-friendly interface.
+
+
+
 import { useEffect, useState } from "react";
 import AddExerciseModal from "./AddExerciseModal";
 

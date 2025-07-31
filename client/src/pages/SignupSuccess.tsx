@@ -1,3 +1,8 @@
+// SignupSuccess
+// This page handles the successful signup process by saving the new user data to the server.
+// It uses Clerk for user authentication and redirects the user to the home page after saving their data
+// It displays a loading message while the user data is being saved.
+
 import { useUser } from '@clerk/clerk-react'
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'

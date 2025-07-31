@@ -1,3 +1,12 @@
+// VideoModal
+// This component displays a modal with a video player for exercise videos.
+// It allows users to watch videos in a larger view, enhancing the user experience.
+// The modal includes a close button and uses an iframe to embed YouTube videos.
+// It is styled with Tailwind CSS for a modern look and is responsive to different screen sizes
+
+
+
+
 import React from 'react';
 
 type VideoModalProps = {

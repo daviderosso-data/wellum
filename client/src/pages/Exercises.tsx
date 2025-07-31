@@ -1,3 +1,10 @@
+// Exercises
+// This page displays a list of exercises with filtering and pagination.
+// It allows users to view exercises by muscle group and navigate through pages of exercises.
+// The page fetches exercise data from an API and uses a responsive grid layout to display exercises.
+// It includes a sidebar for navigation and a header with the page title. 
+
+
 import { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import ExerciseList from "../components/ExpCards";

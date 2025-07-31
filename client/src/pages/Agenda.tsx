@@ -1,3 +1,12 @@
+// AgendaPage
+// This page displays a calendar view of the user's workout history.
+// It allows users to navigate through months, view workouts for specific days, and delete workouts.
+// The page fetches workout data from an API and organizes it by date.
+// It uses React hooks for state management and side effects, and is styled with Tailwind CSS for a modern look.
+// The calendar displays the number of workouts per day and allows users to click on a day to see details.
+// It also includes a sidebar for navigation and a responsive design for mobile devices
+
+
 import { useEffect, useState } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import Sidebar from '../components/Sidebar';

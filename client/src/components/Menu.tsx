@@ -1,3 +1,10 @@
+// Menu
+// This component renders a navigation menu with links to different pages.
+// It includes a logo, a title, and user authentication buttons.
+// The menu is responsive and adapts to different screen sizes, providing a user-friendly interface.     
+// It uses Clerk for user authentication and displays the user's name if signed in.
+
+
 import { Link } from "react-router-dom";
 import { SignedIn, UserButton, SignedOut, useUser } from "@clerk/clerk-react";
 

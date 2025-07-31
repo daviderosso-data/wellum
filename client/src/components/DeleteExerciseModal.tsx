@@ -1,3 +1,10 @@
+// Modal to delete an exercise
+// This component allows users to confirm the deletion of an exercise by entering a security code. (temporary solution)
+// If the code matches a predefined value, the exercise is deleted from the server. 
+// It provides feedback on success or failure of the deletion operation and can trigger a callback
+// function to refresh the exercise list or redirect the user after deletion.
+// The component uses React hooks for state management and side effects, and fetches data from an API endpoint.
+
 import { useState } from 'react';
 
 const API_URL = import.meta.env.VITE_URL_SERVER;

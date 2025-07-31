@@ -1,3 +1,12 @@
+// AddExercise
+// This page allows users to add new exercises to the application.
+// It includes a form for entering exercise details such as name, description, muscle group, video URL, and image upload.
+// The form submission is protected by a security code to prevent unauthorized uploads.
+// The page uses React hooks for state management and includes modals for confirming the upload and displaying results.
+// The form is styled with Tailwind CSS for a modern and responsive design.
+
+
+
 import { useRef, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import { Link } from "react-router-dom";

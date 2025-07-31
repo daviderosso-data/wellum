@@ -1,3 +1,11 @@
+//  WorkoutRunner
+// This component manages the workout session, including starting exercises, tracking time, and handling rest periods.
+// It fetches exercise data from an API and allows users to modify weights for each exercise.
+// The component uses React hooks for state management and side effects, and it provides a user-friendly interface with Tailwind CSS styling.
+// It also includes a modal for confirming the completion of the workout and saving it to the user's calendar.
+// The workout can be paused, resumed, and navigated through exercises
+
+
 import { useEffect, useRef, useState } from 'react'
 import WorkoutCompleteModal from './workoutCompleteModal'
 import { useUser } from "@clerk/clerk-react";

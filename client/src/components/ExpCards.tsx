@@ -1,3 +1,9 @@
+// Exercise cards component
+// This component displays a list of exercises in card format, allowing users to view details, play videos from youtube link, and delete exercises.
+// It uses a modal for video playback and another modal for confirming exercise deletion.
+// The component is responsive and adapts to different screen sizes, providing a user-friendly interface for managing exercises.
+
+
 import { useState } from "react"
 import VideoModal from "./VideoModal"
 import DeleteExerciseModal from "./DeleteExerciseModal"

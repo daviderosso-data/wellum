@@ -1,3 +1,7 @@
+// Footer component with logo and links
+// This component displays a footer with a logo and links to "About Us", "Contact Us", and "Privacy Policy".
+// It uses Tailwind CSS for styling and is responsive, adapting to different screen sizes.
+// The footer is designed to be visually appealing and consistent with the overall theme of the application.
 
 export default function FooterWithLogo() {
 

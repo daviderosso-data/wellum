@@ -1,3 +1,7 @@
+// HeroSection
+// This component displays a hero section with a video background, a logo, and a title.
+// It uses Tailwind CSS for styling and is responsive, adapting to different screen sizes.
+// The hero section is designed to be visually appealing and sets the tone for the application.
 
 function HeroSection() {
   return (

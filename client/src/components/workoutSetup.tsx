@@ -1,3 +1,12 @@
+// WorkoutSetup
+// This component allows users to set up their workout by selecting a workout sheet and specifying rest time.
+// It fetches the user's workout sheets from an API and displays them in a dropdown menu.
+// Users can choose a sheet and set the rest time using a slider.
+// The component is styled with Tailwind CSS for a modern look and is responsive to different screen sizes.
+// It includes buttons to start the workout or go back to the previous screen.
+// The component uses React hooks for state management and side effects, ensuring a smooth user experience.
+
+
 import { useEffect, useState } from 'react'
 
 

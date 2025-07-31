@@ -1,3 +1,11 @@
+// ResultModal
+// This component displays a modal with the result of an operation, such as adding or deleting an exercise.
+// It shows a success or error message based on the operation's outcome.
+// The modal includes a close button and can optionally reset the form or redirect the user after the operation.
+// It uses React hooks for state management and is styled with Tailwind CSS for a modern look
+
+
+
 import React from "react";
 
 interface ResultModalProps {
