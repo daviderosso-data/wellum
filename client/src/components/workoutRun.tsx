@@ -1,3 +1,11 @@
+//  WorkoutRunner
+// This component manages the workout session, including starting exercises, tracking time, and handling rest periods.
+// It fetches exercise data from an API and allows users to modify weights for each exercise.
+// The component uses React hooks for state management and side effects, and it provides a user-friendly interface with Tailwind CSS styling.
+// It also includes a modal for confirming the completion of the workout and saving it to the user's calendar.
+// The workout can be paused, resumed, and navigated through exercises
+
+
 import { useEffect, useRef, useState } from 'react'
 import WorkoutCompleteModal from './workoutCompleteModal'
 import { useUser } from "@clerk/clerk-react";
@@ -17,14 +25,13 @@ type ExerciseData = {
   imageUrl?: string
 }
 
-// Modale per modificare il carico
 const WeightModal = ({ isOpen, currentWeight, onSave, onClose }: { 
   isOpen: boolean, 
   currentWeight: number, 
   onSave: (weight: number) => void, 
   onClose: () => void 
 }) => {
-  const [weight, setWeight] = useState(currentWeight);
+  const [weight, setWeight] = useState(currentWeight.toString());
 
   if (!isOpen) return null;
 
@@ -34,14 +41,19 @@ const WeightModal = ({ isOpen, currentWeight, onSave, onClose }: {
         <h3 className="text-xl font-bold text-amber-500 mb-4">Modifica carico</h3>
         <p className="mb-4 text-white">Inserisci il carico per questa ripetizione:</p>
         
-        <input
-          type="number"
-          value={weight}
-          onChange={(e) => setWeight(Number(e.target.value))}
-          className="w-full p-2 mb-4 bg-zinc-700 text-white border border-zinc-600 rounded"
-          min={0}
-          step={0.5}
-        />
+      <input
+  type="text"
+  inputMode="decimal"
+  value={weight}
+  onChange={(e) => {
+    const value = e.target.value;
+    if (/^\d*\.?\d*$/.test(value)) {
+      setWeight(value);
+    }
+  }}
+  className="w-full p-2 mb-4 bg-zinc-700 text-white border border-zinc-600 rounded appearance-none"
+  placeholder="0.0"
+/>
         
         <div className="flex justify-end gap-2">
           <button 
@@ -51,7 +63,7 @@ const WeightModal = ({ isOpen, currentWeight, onSave, onClose }: {
             Annulla
           </button>
           <button 
-            onClick={() => onSave(weight)}
+            onClick={() => onSave(Number(weight))}
             className="px-4 py-2 bg-amber-500 text-zinc-900 rounded"
           >
             Salva
@@ -80,7 +92,6 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
   const [phase, setPhase] = useState<'idle' | 'workout' | 'rest'>('idle')
   const { user } = useUser();
   
-  // Stato per la modale di modifica del carico
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [currentWeight, setCurrentWeight] = useState(0);
   
@@ -89,20 +100,17 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
   const current = exercises[currentIndex]
   const totalReps = current?.repetitions || 0
 
-  // Fetch exercises when component mounts or sheetId changes
   useEffect(() => {
     fetch(`${API_URL}/api/sheet/${sheetId}`)
       .then(res => res.json())
       .then(data => {
         setExercises(data.exercises || []);
-        // Imposta il peso iniziale dall'esercizio corrente
         if (data.exercises && data.exercises.length > 0) {
           setCurrentWeight(data.exercises[0].weight || 0);
         }
       })
   }, [sheetId])
 
-  // Fetch exercise data when currentIndex changes
   useEffect(() => {
     const loadExerciseData = async () => {
       const ex = exercises[currentIndex]
@@ -111,7 +119,6 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
           const res = await fetch(`${API_URL}/api/exercises/${ex.exerciseId}`)
           const data = await res.json()
           setExerciseData(data)
-          // Aggiorna il peso corrente quando cambia l'esercizio
           setCurrentWeight(ex.weight || 0)
         } catch {
           setExerciseData(null)
@@ -121,7 +128,6 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
     if (exercises.length > 0) loadExerciseData()
   }, [currentIndex, exercises])
 
-  // Timer logic
   useEffect(() => {
     if (isRunning) {
       intervalRef.current = setInterval(() => {
@@ -135,32 +141,26 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
     return () => clearInterval(intervalRef.current!)
   }, [isRunning, phase])
 
-  // when workout phase changes, reset timer
   useEffect(() => {
     if (phase === 'rest' && timer <= 0 && isRunning) {
       completeRep()
     }
   }, [timer, phase, isRunning])
 
-  // Inizia l'allenamento direttamente senza mostrare la modale
   const startWorkout = () => {
     setTimer(0);
     setIsRunning(true);
     setPhase('workout');
   }
 
-  // Funzione per salvare il peso e basta (senza avviare l'allenamento)
   const saveWeight = (weight: number) => {
     setCurrentWeight(weight);
     setShowWeightModal(false);
     
-    // Salva il peso nella scheda
     updateExerciseWeight(weight);
   }
 
-  // Funzione per aggiornare il peso dell'esercizio corrente
   const updateExerciseWeight = async (weight: number) => {
-    // Crea una copia degli esercizi per modificarla
     const updatedExercises = [...exercises];
     updatedExercises[currentIndex] = {
       ...updatedExercises[currentIndex],
@@ -169,7 +169,6 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
     
     setExercises(updatedExercises);
     
-    // Salva sul server
     try {
       await fetch(`${API_URL}/api/sheet/${sheetId}`, {
         method: "PUT",
@@ -195,7 +194,6 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
       setCurrentRep(r => r + 1)
       setPhase('idle')
       setTimer(0)
-      // Non mostrare più automaticamente la modale
     } else {
       nextExercise()
     }
@@ -208,13 +206,18 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
       setTimer(0)
       setIsRunning(false)
       setPhase('idle')
-      // Non mostrare più automaticamente la modale
     } else {
       setIsComplete(true)
     }
   }
 
   const skipExercise = () => {
+    setIsRunning(false)
+  
+  if (intervalRef.current) {
+    clearInterval(intervalRef.current)
+    intervalRef.current = null
+  }
     nextExercise()
   }
 
@@ -228,14 +231,12 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
     return 'Continua'
   }
 
-  // Handle main button click based on current phase
   const handleMainButton = () => {
     if (phase === 'idle') startWorkout()
     else if (phase === 'workout') startRest()
     else if (phase === 'rest') completeRep()
   }
 
-  // Save workout to calendar
   const handleSaveWorkout = async () => {
     if (!user?.id) return;
     await fetch(`${API_URL}/api/workouts`, {
@@ -287,7 +288,7 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
             <img
               src={exerciseData.imageUrl}
               alt={exerciseData.name}
-              className="w-full h-64 object-cover rounded"
+              className="w-full h-48 object-cover rounded"
             />
           )}
 
@@ -299,36 +300,37 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
             {phase === 'rest' ? `Recupero: ${formatTime(timer)}` : `Timer: ${formatTime(timer)}`}
           </div>
 
-          <div className="flex flex-col items-center gap-4 mt-4">
-            <button
-              onClick={handleMainButton}
-              className="px-6 py-3 bg-amber-500 text-zinc-900 hover:bg-zinc-400 rounded text-lg"
+          <div className="flex items-center gap-4 mt-4">
+            
+          <button
+              onClick={skipExercise}
+              className="text-xs text-zinc-200 hover:underline mt-2"
             >
-              {buttonLabel()}
+              Salta esercizio
             </button>
             {phase === 'idle' && (
               <button
                 onClick={() => setShowWeightModal(true)}
-                className="px-4 py-2 bg-zinc-500 text-white rounded text-sm"
+                className="px-4 py-2 bg-zinc-500 text-whit rounded text-sm"
               >
                 Modifica carico
               </button>
-            )}
-            <button
-              onClick={skipExercise}
-              className="text-sm text-zinc-200 hover:underline mt-2"
+              
+            )}<button
+              onClick={handleMainButton}
+              className="px-6 py-3 bg-amber-500 shadow-md text-zinc-900 hover:bg-zinc-400 rounded text-xl font-semibold transition"
             >
-              Salta esercizio
+              {buttonLabel()}
             </button>
+           
           </div>
         </div>
       </div>
 
-      {/* Modale per modificare il carico */}
       <WeightModal 
         isOpen={showWeightModal}
         currentWeight={currentWeight}
-        onSave={saveWeight} // Ora usa saveWeight invece di saveWeightAndStart
+        onSave={saveWeight} 
         onClose={() => setShowWeightModal(false)}
       />
 

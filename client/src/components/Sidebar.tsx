@@ -1,3 +1,8 @@
+// Sidebar
+// This component renders a sidebar with navigation links and user information.
+// It includes links to various sections of the application, such as the exercise sheet, workout guide, agenda, and exercises.
+// The sidebar is responsive and includes a toggle button for mobile view.
+
 import { Link, useLocation } from 'react-router-dom'
 import { FaHome, FaBars, FaTimes } from 'react-icons/fa'
 import { UserButton, useUser } from '@clerk/clerk-react'
@@ -17,7 +22,6 @@ const Sidebar = () => {
 
   return (
     <>
-      {/* Hamburger for mobile */}
       <div className="md:hidden fixed top-4 left-4 z-50">
         <button
           onClick={() => setOpen(true)}
@@ -28,10 +32,9 @@ const Sidebar = () => {
         </button>
       </div>
 
-      {/* Sidebar desktop */}
       <div className="hidden md:block w-64 h-screen bg-zinc-800 shadow-md p-6">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl text-green-500 font-bold">Wellum - DEV</h2>
+          <div className="flex"> <img src="assets/pictures/logoAmberTransp.png" className="h-7"></img>  <h1 className="text-xl font-bold font-display text-amber-500 curosor-pointer"><Link to="/">Wellum</Link></h1></div>
           <Link to="/" className="text-white hover:text-amber-500">
             <FaHome size={20} />
           </Link>
@@ -50,9 +53,7 @@ const Sidebar = () => {
             Tutti gli Esercizi
           </Link>
        
-          <Link to="/timer" className={linkClass('/timer')}>
-            Timer
-          </Link>
+          
           <Link to="/addexercises" className={linkClass('/addexercises')}>
             Aggiungi Esercizio
           </Link>
@@ -68,20 +69,19 @@ const Sidebar = () => {
       {/* Sidebar mobile overlay */}
       {open && (
   <div className="fixed inset-0 z-50 bg-black bg-opacity-30 flex">
-    <div className="w-64 h-full bg-white shadow-md p-6 relative animate-slide-in-left">
+    <div className="w-64 h-full bg-zinc-800 shadow-md p-6 relative animate-slide-in-left">
       {/* Tasto chiudi in alto a destra */}
       <button
         onClick={() => setOpen(false)}
-        className="absolute top-4 right-4 text-gray-600 hover:text-indigo-600"
+        className="absolute top-4 right-4 text-white hover:text-amber-500"
         aria-label="Chiudi menu"
       >
         <FaTimes size={24} />
       </button>
       <div className="mb-6">
-        <h2 className="text-xl font-bold mb-2">Wellum</h2>
-        <Link
+ <div className="flex"> <img src="assets/pictures/logoAmberTransp.png" className="h-7"></img>  <h1 className="text-xl font-bold font-display text-amber-500 curosor-pointer"><Link to="/">Wellum</Link></h1></div>        <Link
           to="/"
-          className="text-gray-600 hover:text-indigo-600 inline-flex items-center gap-2 mb-4"
+          className="text-zinc-800 inline-flex items-center gap-2 mb-4"
           onClick={() => setOpen(false)}
         >
           <FaHome size={20} />
@@ -101,12 +101,7 @@ const Sidebar = () => {
         <Link to="/exercises" className={linkClass('/exercises')} onClick={() => setOpen(false)}>
           Tutti gli Esercizi
         </Link>
-        <Link to="/dashboard" className={linkClass('/dashboard')} onClick={() => setOpen(false)}>
-          Dashboard
-        </Link>
-        <Link to="/timer" className={linkClass('/timer')} onClick={() => setOpen(false)}>
-          Timer
-        </Link>
+      
         <Link to="/addexercises" className={linkClass('/addexercises')} onClick={() => setOpen(false)}>
           Aggiungi Esercizio
         </Link>
@@ -118,12 +113,10 @@ const Sidebar = () => {
         </div>
       </nav>
     </div>
-    {/* Click outside to close */}
     <div className="flex-1" onClick={() => setOpen(false)} />
   </div>
 )}
 
-      {/* Animazione slide-in */}
       <style>
         {`
           @keyframes slide-in-left {
@@ -131,7 +124,7 @@ const Sidebar = () => {
             to { transform: translateX(0); }
           }
           .animate-slide-in-left {
-            animation: slide-in-left 0.2s cubic-bezier(0.4,0,0.2,1);
+            animation: slide-in-left 0.3s cubic-bezier(0.4,0,0.2,1);
           }
         `}
       </style>

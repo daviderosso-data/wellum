@@ -1,3 +1,13 @@
+// FeaturesSection.tsx
+// This component displays a section with features of the application.
+// Made From Aceternity Template https://ui.aceternity.com/components/feature-sections
+// It includes a grid layout with feature cards, each containing a title, description, and a skeleton for future content.
+// The section is styled with Tailwind CSS and includes a globe animation in the background.
+// The component is responsive and adapts to different screen sizes, providing a user-friendly interface.
+
+
+
+
 import React from "react";
 import { cn } from "../lib/utils";
 import createGlobe from "cobe";
@@ -40,7 +50,7 @@ export default function FeaturesSection() {
     },
   ];
   return (
-    <div className=" w-screen z-20 py-10 lg:py-40 mx-auto bg-zinc-700 ">
+    <div className=" w-screen z-20 py-10 lg:py-40 mx-auto bg-zinc-800 ">
       <div className="px-8">
         <h4 className="text-3xl lg:text-5xl lg:leading-tight max-w-5xl mx-auto text-center tracking-tight font-medium text-amber-500">
 Un unica piattaforma per i tuoi allenamenti        </h4>
@@ -118,8 +128,8 @@ export const SkeletonOne = () => {
         </div>
       </div>
  
-      <div className="absolute bottom-0 z-40 inset-x-0 h-60 bg-gradient-to-t from-zinc-700 via-transparent  to-transparent w-full pointer-events-none" />
-      <div className="absolute top-0 z-40 inset-x-0 h-60 bg-gradient-to-b from-zinc-700  via-transparent to-transparent w-full pointer-events-none" />
+      <div className="absolute bottom-0 z-40 inset-x-0 h-60 bg-gradient-to-t from-zinc-800 via-transparent  to-transparent w-full pointer-events-none" />
+      <div className="absolute top-0 z-40 inset-x-0 h-60 bg-gradient-to-b from-zinc-800  via-transparent to-transparent w-full pointer-events-none" />
     </div>
   );
 };
@@ -171,20 +181,20 @@ export const SkeletonTwo = () => {
  
   const imageVariants = {
     whileHover: {
-      scale: 1.1,
+      scale: 1.5,
       rotate: 0,
       zIndex: 100,
     },
     whileTap: {
-      scale: 1.1,
+      scale: 1.5,
       rotate: 0,
       zIndex: 100,
     },
   };
   return (
-    <div className="relative flex flex-col items-start gap-12 h-full overflow-hidden lg:mt-20 ">
+    <div className="relative flex flex-col items-start gap-12 h-full overflow-hidden  lg:mt-20 ">
       {/* TODO */}
-      <div className="flex flex-row -ml-20">
+      <div className="flex flex-row ">
         {images.map((image, idx) => (
           <motion.div
             variants={imageVariants}
@@ -194,7 +204,7 @@ export const SkeletonTwo = () => {
             }}
             whileHover="whileHover"
             whileTap="whileTap"
-            className="rounded-xl -mr-4 mt-4 p-1 bg-white border border-neutral-100 shrink-0 overflow-hidden"
+            className="rounded-xl -mr-1 md:-ml-5 mt-4 p-1 bg-white border border-neutral-100 shrink-0 overflow-hidden"
           >
             <img
               src={image}
@@ -216,7 +226,7 @@ export const SkeletonTwo = () => {
             variants={imageVariants}
             whileHover="whileHover"
             whileTap="whileTap"
-            className="rounded-xl -mr-4 mt-4 p-1 bg-white border border-neutral-100 shrink-0 overflow-hidden"
+            className="rounded-xl  -mr-1 md:-ml-5 mt-4 p-1 bg-white border border-neutral-100 shrink-0 overflow-hidden"
           >
             <img
               src={image}
@@ -238,7 +248,7 @@ export const SkeletonTwo = () => {
             variants={imageVariants}
             whileHover="whileHover"
             whileTap="whileTap"
-            className="rounded-xl -mr-4 mt-4 p-1 bg-white border border-neutral-100 shrink-0 overflow-hidden"
+            className="rounded-xl -mr-1 md:-ml-5 mt-4 p-1 bg-white border border-neutral-100 shrink-0 overflow-hidden"
           >
             <img
               src={image}
@@ -251,8 +261,8 @@ export const SkeletonTwo = () => {
         ))}
       </div>
  
-      <div className="absolute left-0 z-[100] inset-y-0 w-20 bg-gradient-to-r from-zinc-700  to-transparent  h-full pointer-events-none" />
-      <div className="absolute right-0 z-[100] inset-y-0 w-20 bg-gradient-to-l from-zinc-700  to-transparent h-full pointer-events-none" />
+      <div className="absolute left-0 z-[100] inset-y-0 w-20 bg-gradient-to-r from-zinc-800  to-transparent  h-full pointer-events-none" />
+      <div className="absolute right-0 z-[100] inset-y-0 w-20 bg-gradient-to-l from-zinc-800  to-transparent h-full pointer-events-none" />
     </div>
   );
 };

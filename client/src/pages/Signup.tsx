@@ -1,3 +1,7 @@
+// SignUp
+// This page renders the sign-up form using Clerk's SignUp component.
+// It includes a menu and footer for navigation and layout consistency. 
+
 import { SignUp } from '@clerk/clerk-react'
 
 import Menu from '../components/Menu'

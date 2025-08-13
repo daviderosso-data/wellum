@@ -1,4 +1,13 @@
+// SheetCard
+// This component displays a card for a workout sheet, allowing users to view, edit, and manage exercises.
+// It fetches exercise details from an API and allows adding, editing, and deleting exercises.
+// The component is responsive and adapts to different screen sizes, providing a user-friendly interface.
+
+
+
 import { useEffect, useState } from "react";
+import AddExerciseModal from "./AddExerciseModal";
+
 const API_URL = import.meta.env.VITE_URL_SERVER 
 
 type ExerciseItem = {
@@ -14,6 +23,7 @@ type ExerciseDetails = {
   name: string;
   description: string;
   imageUrl: string;
+  group?: string;
 };
 
 type Sheet = {
@@ -32,16 +42,8 @@ type Props = {
 export default function SheetCard({ sheet, onDeleteRequest }: Props) {
   const [exerciseDetails, setExerciseDetails] = useState<Record<string, ExerciseDetails>>({});
   const [showModal, setShowModal] = useState(false);
-  const [allExercises, setAllExercises] = useState<ExerciseDetails[]>([]);
-  const [selectedExercise, setSelectedExercise] = useState("");
-  const [serie, setSerie] = useState<number>(3);
-  const [repetitions, setRepetitions] = useState<number>(10);
-  const [weight, setWeight] = useState<number>(0);
-  const [notes, setNotes] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [editExercises, setEditExercises] = useState<ExerciseItem[]>([]);
-  const [saving, setSaving] = useState(false); // Stato per il caricamento del salvataggio
-
 
   useEffect(() => {
     async function fetchDetails() {
@@ -55,8 +57,8 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
               details[ex.exerciseId] = data;
             }
           } catch {
-            // Silently ignore fetch errors
-          }
+            console.error(`Errore nel caricamento dei dettagli per l'esercizio ${ex.exerciseId}`);
+          } 
         })
       );
       setExerciseDetails(details);
@@ -64,33 +66,22 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
     fetchDetails();
   }, [sheet.exercises]);
 
-  useEffect(() => {
-    fetch(`${API_URL}/api/exercises`)
-      .then(res => res.json())
-      .then(data => setAllExercises(data))
-      .catch(() => setAllExercises([]));
-  }, []);
-
-  const handleAddExercise = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedExercise) return;
-    const newExercise: ExerciseItem = {
-      exerciseId: selectedExercise,
-      serie,
-      repetitions,
-      weight,
-      notes,
-    };
-    await fetch(`${API_URL}/api/sheet/${sheet._id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...sheet,
-        exercises: [...sheet.exercises, newExercise],
-      }),
-    });
-    setShowModal(false);
-    window.location.reload();
+  const handleAddExercise = async (newExercise: ExerciseItem) => {
+    try {
+      await fetch(`${API_URL}/api/sheet/${sheet._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...sheet,
+          exercises: [...sheet.exercises, newExercise],
+        }),
+      });
+      setShowModal(false);
+      window.location.reload();
+    } catch (error) {
+      console.error("Errore durante l'aggiunta dell'esercizio:", error);
+      alert("Si è verificato un errore. Riprova.");
+    }
   };
 
   const handleEditAll = () => {
@@ -105,35 +96,25 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
       )
     );
   };
-const handleSaveAll = async () => {
-  setSaving(true);
-   console.log('Trying to save to:', API_URL);
-  console.log('Sheet ID:', sheet._id);
   
-  try {
-    const res = await fetch(`${API_URL}/api/sheet/${sheet._id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...sheet, exercises: editExercises }),
-    });
-    if (res.ok) {
-      setIsEditing(false);
-      // Attendi 1 secondo per UX, poi ricarica (opzionale)
-      setTimeout(() => {
-        setSaving(false);
+  const handleSaveAll = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/sheet/${sheet._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...sheet, exercises: editExercises }),
+      });
+      if (res.ok) {
+        setIsEditing(false);
         window.location.reload();
-      }, 2000);
-    } else {
-      // Gestisci errore di salvataggio
-      setSaving(false);
-      alert("Errore durante il salvataggio. Riprova.");
+      } else {
+        alert("Errore durante il salvataggio. Riprova.");
+      }
+    } catch (err) {
+      console.log("Errore di rete:", err);
+      alert("Errore di rete. Riprova.");
     }
-  } catch (err) {
-    setSaving(false);
-    console.log("Errore di rete:", err);
-    alert("Errore di rete. Riprova.");
-  }
-};
+  };
 
   const handleCancelAll = () => {
     setIsEditing(false);
@@ -143,221 +124,182 @@ const handleSaveAll = async () => {
   const handleDeleteExercise = (idx: number) => {
     setEditExercises(prev => prev.filter((_, i) => i !== idx));
   };
-
+  
   return (
-    <div className="bg-zinc-300 rounded shadow p-4">
-      <div className="flex justify-between items-center mb-2">
-        <h2 className="text-xl font-bold">{sheet.name}</h2>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setShowModal(true)}
-            className="px-3 py-1 bg-zinc-600 text-white rounded hover:bg-zinc-700 transition font-semibold cursor-pointer"
-          >
-            + Aggiungi esercizio
-          </button>
+    <div className="bg-zinc-300 rounded shadow p-4 overflow-hidden">
+      <div className="flex flex-col mb-2">
+        <h2 className="text-xl font-bold break-words">{sheet.name}</h2>
+        <p className="text-gray-500 text-sm mb-2">
+          Creata il {new Date(sheet.createdAt).toLocaleDateString()}
+        </p>
+        
+        <div className="flex flex-wrap gap-2">
+          {!isEditing && (
+            <button
+              onClick={() => setShowModal(true)}
+              className="px-2 py-1 bg-zinc-400 text-xs md:text-base text-zinc-900 rounded hover:bg-zinc-200 transition font-semibold cursor-pointer"
+            >
+              + Aggiungi esercizio
+            </button>
+          )}
+          
           {!isEditing ? (
             <button
               onClick={handleEditAll}
-              className="px-3 py-1 bg-yellow-500 text-zinc-900 rounded hover:bg-yellow-600 transition font-semibold cursor-pointer"
+              className="px-2 py-1 bg-amber-500 text-xs md:text-base text-zinc-900 rounded hover:bg-amber-600 transition font-semibold cursor-pointer"
             >
               Modifica
             </button>
           ) : (
-            <>
+            <div className="flex flex-wrap gap-2">
               <button
                 onClick={handleSaveAll}
-                className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition font-semibold"
+                className="px-2 py-1 bg-green-500 text-xs md:text-base text-zinc-900 rounded hover:bg-green-600 transition font-semibold cursor-pointer"
               >
                 Salva
               </button>
               <button
                 onClick={handleCancelAll}
-                className="px-3 py-1 bg-gray-400 text-white rounded hover:bg-gray-500 transition font-semibold"
+                className="px-2 py-1 bg-amber-500 text-xs md:text-base text-zinc-900 rounded hover:bg-amber-600 transition font-semibold cursor-pointer"
               >
                 Annulla
               </button>
               {onDeleteRequest && (
                 <button
                   onClick={onDeleteRequest}
-                  className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition font-semibold"
+                  className="px-2 py-1 bg-red-600 text-xs md:text-base text-white rounded hover:bg-red-700 transition font-semibold cursor-pointer"
                 >
                   Elimina scheda
                 </button>
               )}
-            </>
+            </div>
           )}
         </div>
       </div>
-      <p className="text-gray-500 text-sm mb-2">
-        Creata il {new Date(sheet.createdAt).toLocaleDateString()}
-      </p>
+      
       <ul className="mb-2">
         {(isEditing ? editExercises : sheet.exercises).map((ex, idx) => {
           const details = exerciseDetails[ex.exerciseId];
+          const isExerciseDeleted = !details;
+
           return (
-            <li key={idx} className="border-b last:border-b-0 py-2 flex items-center gap-4">
-              {details && details.imageUrl && (
-                <img
-                  src={details.imageUrl}
-                  alt={details.name}
-                  className="w-20 h-16 object-cover rounded"
-                />
-              )}
-              <div>
-                <div className="font-semibold">{details ? details.name : ex.exerciseId}</div>
-                <div className="text-sm text-gray-600">{details?.description}</div>
-                <div>
-                  <span className="font-semibold">Serie:</span>{" "}
-                  {isEditing ? (
-                    <input
-                      type="number"
-                      value={ex.serie}
-                      min={1}
-                      onChange={e => handleEditChange(idx, "serie", Number(e.target.value))}
-                      className="border rounded w-12 mx-1 p-1"
+            <li key={idx} className="border-b last:border-b-0 py-2">
+              <div className="flex gap-3">
+               {isExerciseDeleted ? (
+                  <img
+                    src="/assets/pictures/404.png"
+                    alt="Esercizio non disponibile"
+                    className={`w-20 h-16 object-cover rounded ${isEditing ? 'hidden md:block' : ''}`}
+                  />
+                ) : (
+                  details.imageUrl && (
+                    <img
+                      src={details.imageUrl}
+                      alt={details.name}
+                      className={`w-20 h-16 object-cover rounded ${isEditing ? 'hidden md:block' : ''}`}
                     />
+                  )
+                )}
+                
+                <div className="min-w-0 flex-1">
+                  {isExerciseDeleted ? (
+                    <div className="text-red-600 font-semibold">Esercizio eliminato dal Database</div>
                   ) : (
-                    ex.serie
+                    <>
+                      <div className="font-semibold text-sm break-words">{details ? details.name : ex.exerciseId}</div>
+                      <div className="text-xs text-gray-600 break-words mb-2">{details?.description}</div>
+                    </>
                   )}
-                  {" | "}
-                  <span className="font-semibold">Ripetizioni:</span>{" "}
+                  
                   {isEditing ? (
-                    <input
-                      type="number"
-                      value={ex.repetitions}
-                      min={1}
-                      onChange={e => handleEditChange(idx, "repetitions", Number(e.target.value))}
-                      className="border rounded w-16 mx-1 p-1"
-                    />
+                    <div className="grid grid-cols-1 gap-2">
+                      <div>
+                        <label className="text-xs font-medium block">Serie:</label>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          value={ex.serie}
+                          onChange={e => {
+                            const value = e.target.value;
+                            if (/^\d*$/.test(value)) {
+                              handleEditChange(idx, "serie", value ? parseInt(value) : 1);
+                            }
+                          }}
+                          className="w-full border bg-gray-100 rounded p-1 text-xs appearance-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium block">Ripetizioni:</label>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          value={ex.repetitions}
+                          onChange={e => {
+                            const value = e.target.value;
+                            if (/^\d*$/.test(value)) {
+                              handleEditChange(idx, "repetitions", value ? parseInt(value) : 1);
+                            }
+                          }}
+                          className="w-full border bg-gray-100 rounded p-1 text-xs appearance-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium block">Peso (kg):</label>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          value={ex.weight ?? 0}
+                          onChange={e => {
+                            const value = e.target.value;
+                            if (/^\d*\.?\d*$/.test(value)) {
+                              handleEditChange(idx, "weight", value ? parseFloat(value) : 0);
+                            }
+                          }}
+                          className="w-full border bg-gray-100 rounded p-1 text-xs appearance-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium block">Note:</label>
+                        <input
+                          type="text"
+                          value={ex.notes ?? ""}
+                          onChange={e => handleEditChange(idx, "notes", e.target.value)}
+                          className="w-full border bg-gray-100 rounded p-1 text-xs"
+                        />
+                      </div>
+                      <div className="mt-3">
+                        <button
+                          type="button"
+                          className="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
+                          onClick={() => handleDeleteExercise(idx)}
+                          title="Elimina esercizio"
+                        >
+                          Elimina esercizio
+                        </button>
+                      </div>
+                    </div>
                   ) : (
-                    ex.repetitions
+                      isExerciseDeleted ? (null) :(<div className="text-xs mt-1 break-words">
+                      <span className="font-semibold">Serie:</span> {ex.serie} | <span className="font-semibold">Ripetizioni:</span> {ex.repetitions} | <span className="font-semibold">Peso:</span> {ex.weight ?? 0} Kg
+                      {ex.notes && (
+                        <> | <span className="font-semibold">Note:</span> {ex.notes}</>
+                      )}
+                    </div>) 
                   )}
-                  {" | "}
-                  <span className="font-semibold">Peso:</span>{" "}
-                  {isEditing ? (
-                    <input
-                      type="number"
-                      value={ex.weight ?? 0}
-                      min={0}
-                      onChange={e => handleEditChange(idx, "weight", Number(e.target.value))}
-                      className="border rounded w-16 mx-1 p-1"
-                    />
-                  ) : (
-                    ex.weight ?? 0
-                  )}
-                  {" Kg  | "}
-                  <span className="font-semibold">Note:</span>{" "}
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={ex.notes ?? ""}
-                      onChange={e => handleEditChange(idx, "notes", e.target.value)}
-                      className="border rounded w-64 mx-1 p-1"
-                    />
-                  ) : (
-                    ex.notes ?? ""
-                  )}
-                  {isEditing && (
-                    <button
-                      type="button"
-                      className="ml-2 px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700"
-                      onClick={() => handleDeleteExercise(idx)}
-                      title="Elimina esercizio"
-                    >
-                      Elimina
-                    </button>
-                  )}
+                
+                  
                 </div>
               </div>
             </li>
           );
         })}
       </ul>
- {saving && (
-        <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 rounded">
-          <svg className="animate-spin h-10 w-10 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
-          </svg>
-        </div>
-      )}
-      {/* MODALE AGGIUNGI ESERCIZIO */}
-      {showModal && (
-        <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50">
-          <div className="bg-white rounded shadow-lg p-6 max-w-md w-full">
-            <h3 className="text-lg font-bold mb-4">Aggiungi esercizio</h3>
-            <form onSubmit={handleAddExercise} className="space-y-3">
-              <select
-                className="w-full p-2 border rounded"
-                value={selectedExercise}
-                onChange={e => setSelectedExercise(e.target.value)}
-                required
-              >
-                <option value="">Seleziona esercizio</option>
-                {allExercises.map(ex => (
-                  <option key={ex._id} value={ex._id}>
-                    {ex.name}
-                  </option>
-                ))}
 
-               
-              </select>
-              <span className="font-semibold">Serie:</span>{" "}
-              <input
-                type="number"
-                className="w-full p-2 border rounded"
-                placeholder="Serie"
-                value={serie}
-                onChange={e => setSerie(Number(e.target.value))}
-                min={1}
-                required
-              />
-              <span className="font-semibold">Ripetizioni:</span>{" "}
-              <input
-                type="number"
-                className="w-full p-2 border rounded"
-                placeholder="Ripetizioni"
-                value={repetitions}
-                onChange={e => setRepetitions(Number(e.target.value))}
-                min={1}
-                required
-              />
-              <span className="font-semibold">Peso:</span>{" "}
-              <input
-                type="number"
-                className="w-full p-2 border rounded"
-                placeholder="Peso (kg)"
-                value={weight}
-                onChange={e => setWeight(Number(e.target.value))}
-                min={0}
-              />
-              <span className="font-semibold">Note:</span>{" "}
-              <input
-                type="text"
-                className="w-full p-2 border rounded"
-                placeholder="Note"
-                value={notes}
-                onChange={e => setNotes(e.target.value)}
-              />
-              <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
-                  onClick={() => setShowModal(false)}
-                >
-                  Annulla
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-                >
-                  Aggiungi
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <AddExerciseModal 
+        isOpen={showModal && !isEditing}
+        onClose={() => setShowModal(false)}
+        onAddExercise={handleAddExercise}
+      />
     </div>
   );
 }

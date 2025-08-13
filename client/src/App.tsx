@@ -7,10 +7,9 @@ import Exercises from './pages/Exercises'
 import ProtectedRoute from './components/ProtectedRoutes'
 import AddExercise from './pages/Addexercises'
 import ExercisesSheets from './pages/exercisesSheets'
-import TimerPage from './pages/timerPage'
 import AgendaPage from './pages/Agenda'
 import WorkoutGuide from './pages/workoutGuide'
-
+import NotFound from './pages/NotFound'
 export default function App() {
   return (
       <Routes>
@@ -21,9 +20,9 @@ export default function App() {
         <Route path="/exercises" element={<ProtectedRoute><Exercises /></ProtectedRoute>}/>
         <Route path="/addexercises" element={<ProtectedRoute><AddExercise /></ProtectedRoute>} />
         <Route path="/exercisesheet" element={<ProtectedRoute><ExercisesSheets /></ProtectedRoute>} />
-        <Route path="/timer" element={<ProtectedRoute><TimerPage /></ProtectedRoute>} />
         <Route path="/agenda" element={<ProtectedRoute><AgendaPage /></ProtectedRoute>} />
         <Route path="/workoutguide" element={<ProtectedRoute><WorkoutGuide /></ProtectedRoute>} />
+       <Route path="*" element={<NotFound/> } />
 
 
       </Routes>
