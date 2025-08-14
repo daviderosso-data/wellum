@@ -3,12 +3,10 @@
 // It fetches exercise details from an API and allows adding, editing, and deleting exercises.
 // The component is responsive and adapts to different screen sizes, providing a user-friendly interface.
 
-
-
 import { useEffect, useState } from "react";
 import AddExerciseModal from "./AddExerciseModal";
-
-const API_URL = import.meta.env.VITE_URL_SERVER 
+import { useApi } from "../lib/utils"; // Importa il wrapper API
+import { useUser } from "@clerk/clerk-react"; // Importa useUser per verificare l'autenticazione
 
 type ExerciseItem = {
   exerciseId: string;
@@ -44,43 +42,66 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editExercises, setEditExercises] = useState<ExerciseItem[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Usa il wrapper API e il hook di autenticazione
+  const api = useApi();
+  const { isSignedIn, isLoaded } = useUser();
 
   useEffect(() => {
+    // Non procedere se l'utente non è autenticato
+    if (!isLoaded || !isSignedIn) return;
+    
     async function fetchDetails() {
       const details: Record<string, ExerciseDetails> = {};
-      await Promise.all(
-        sheet.exercises.map(async (ex) => {
-          try {
-            const res = await fetch(`${API_URL}/api/exercises/${ex.exerciseId}`);
-            if (res.ok) {
-              const data = await res.json();
+      const controller = new AbortController();
+
+      try {
+        await Promise.all(
+          sheet.exercises.map(async (ex) => {
+            try {
+              // Usa il wrapper API per ottenere i dettagli dell'esercizio
+              const data = await api.get<ExerciseDetails>(`/api/exercises/${ex.exerciseId}`, { signal: controller.signal });
               details[ex.exerciseId] = data;
+            } catch (err) {
+              console.error(`Errore nel caricamento dei dettagli per l'esercizio ${ex.exerciseId}:`, err);
             }
-          } catch {
-            console.error(`Errore nel caricamento dei dettagli per l'esercizio ${ex.exerciseId}`);
-          } 
-        })
-      );
-      setExerciseDetails(details);
+          })
+        );
+        setExerciseDetails(details);
+      } catch (err) {
+        console.error("Errore durante il caricamento dei dettagli degli esercizi:", err);
+        setError("Impossibile caricare i dettagli degli esercizi");
+      }
     }
+    
     fetchDetails();
-  }, [sheet.exercises]);
+  }, [sheet.exercises, isSignedIn, isLoaded]);
 
   const handleAddExercise = async (newExercise: ExerciseItem) => {
+    // Verifica che l'utente sia autenticato
+    if (!isSignedIn) {
+      setError("Devi essere autenticato per aggiungere un esercizio");
+      return;
+    }
+    
     try {
-      await fetch(`${API_URL}/api/sheet/${sheet._id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...sheet,
-          exercises: [...sheet.exercises, newExercise],
-        }),
+      setIsLoading(true);
+      setError(null);
+      
+      // Usa il wrapper API per aggiornare la scheda
+      await api.put<Sheet, Partial<Sheet>>(`/api/sheet/${sheet._id}`, {
+        exercises: [...sheet.exercises, newExercise],
       });
+      
       setShowModal(false);
       window.location.reload();
     } catch (error) {
       console.error("Errore durante l'aggiunta dell'esercizio:", error);
-      alert("Si è verificato un errore. Riprova.");
+      setError("Si è verificato un errore durante l'aggiunta dell'esercizio. Riprova.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -98,35 +119,60 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
   };
   
   const handleSaveAll = async () => {
+    // Verifica che l'utente sia autenticato
+    if (!isSignedIn) {
+      setError("Devi essere autenticato per salvare le modifiche");
+      return;
+    }
+    
     try {
-      const res = await fetch(`${API_URL}/api/sheet/${sheet._id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...sheet, exercises: editExercises }),
+      setIsLoading(true);
+      setError(null);
+      
+      // Usa il wrapper API per aggiornare la scheda
+      await api.put<Sheet, Partial<Sheet>>(`/api/sheet/${sheet._id}`, {
+        exercises: editExercises
       });
-      if (res.ok) {
-        setIsEditing(false);
-        window.location.reload();
-      } else {
-        alert("Errore durante il salvataggio. Riprova.");
-      }
+      
+      setIsEditing(false);
+      window.location.reload();
     } catch (err) {
-      console.log("Errore di rete:", err);
-      alert("Errore di rete. Riprova.");
+      console.error("Errore durante il salvataggio:", err);
+      setError("Errore durante il salvataggio. Riprova.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleCancelAll = () => {
     setIsEditing(false);
     setEditExercises([]);
+    setError(null);
   };
 
   const handleDeleteExercise = (idx: number) => {
     setEditExercises(prev => prev.filter((_, i) => i !== idx));
   };
   
+  // Mostra messaggio se l'utente non è autenticato
+  if (isLoaded && !isSignedIn) {
+    return (
+      <div className="bg-zinc-300 rounded shadow p-4">
+        <div className="text-red-600 p-2 bg-red-100 rounded">
+          Devi essere autenticato per visualizzare e modificare le schede
+        </div>
+      </div>
+    );
+  }
+  
   return (
     <div className="bg-zinc-300 rounded shadow p-4 overflow-hidden">
+      {error && (
+        <div className="bg-red-100 text-red-700 p-2 rounded mb-3 text-sm">
+          {error}
+        </div>
+      )}
+      
       <div className="flex flex-col mb-2">
         <h2 className="text-xl font-bold break-words">{sheet.name}</h2>
         <p className="text-gray-500 text-sm mb-2">
@@ -138,6 +184,7 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
             <button
               onClick={() => setShowModal(true)}
               className="px-2 py-1 bg-zinc-400 text-xs md:text-base text-zinc-900 rounded hover:bg-zinc-200 transition font-semibold cursor-pointer"
+              disabled={isLoading}
             >
               + Aggiungi esercizio
             </button>
@@ -147,6 +194,7 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
             <button
               onClick={handleEditAll}
               className="px-2 py-1 bg-amber-500 text-xs md:text-base text-zinc-900 rounded hover:bg-amber-600 transition font-semibold cursor-pointer"
+              disabled={isLoading}
             >
               Modifica
             </button>
@@ -154,13 +202,15 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={handleSaveAll}
-                className="px-2 py-1 bg-green-500 text-xs md:text-base text-zinc-900 rounded hover:bg-green-600 transition font-semibold cursor-pointer"
+                className={`px-2 py-1 ${isLoading ? 'bg-gray-400' : 'bg-green-500 hover:bg-green-600'} text-xs md:text-base text-zinc-900 rounded transition font-semibold cursor-pointer`}
+                disabled={isLoading}
               >
-                Salva
+                {isLoading ? 'Salvataggio...' : 'Salva'}
               </button>
               <button
                 onClick={handleCancelAll}
                 className="px-2 py-1 bg-amber-500 text-xs md:text-base text-zinc-900 rounded hover:bg-amber-600 transition font-semibold cursor-pointer"
+                disabled={isLoading}
               >
                 Annulla
               </button>
@@ -168,6 +218,7 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
                 <button
                   onClick={onDeleteRequest}
                   className="px-2 py-1 bg-red-600 text-xs md:text-base text-white rounded hover:bg-red-700 transition font-semibold cursor-pointer"
+                  disabled={isLoading}
                 >
                   Elimina scheda
                 </button>
@@ -192,7 +243,7 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
                     className={`w-20 h-16 object-cover rounded ${isEditing ? 'hidden md:block' : ''}`}
                   />
                 ) : (
-                  details.imageUrl && (
+                  details?.imageUrl && (
                     <img
                       src={details.imageUrl}
                       alt={details.name}
@@ -279,15 +330,15 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
                       </div>
                     </div>
                   ) : (
-                      isExerciseDeleted ? (null) :(<div className="text-xs mt-1 break-words">
-                      <span className="font-semibold">Serie:</span> {ex.serie} | <span className="font-semibold">Ripetizioni:</span> {ex.repetitions} | <span className="font-semibold">Peso:</span> {ex.weight ?? 0} Kg
-                      {ex.notes && (
-                        <> | <span className="font-semibold">Note:</span> {ex.notes}</>
-                      )}
-                    </div>) 
+                      isExerciseDeleted ? (null) : (
+                        <div className="text-xs mt-1 break-words">
+                          <span className="font-semibold">Serie:</span> {ex.serie} | <span className="font-semibold">Ripetizioni:</span> {ex.repetitions} | <span className="font-semibold">Peso:</span> {ex.weight ?? 0} Kg
+                          {ex.notes && (
+                            <> | <span className="font-semibold">Note:</span> {ex.notes}</>
+                          )}
+                        </div>
+                      )
                   )}
-                
-                  
                 </div>
               </div>
             </li>
