@@ -49,6 +49,7 @@ export default function AddExercise() {
     }
 
     setShowResultModal(false);
+    setIsLoading(false);
   };
 
   const validateFormAndShowSecurityModal = (e: React.FormEvent) => {
@@ -95,7 +96,6 @@ export default function AddExercise() {
       });
 
       if (!res.ok) {
-        // prova a leggere un messaggio di errore utile
         let errMsg = `Errore ${res.status}`;
         try {
           const data = await res.json();
@@ -238,6 +238,15 @@ export default function AddExercise() {
         onClose={() => setShowResultModal(false)}
         onReset={resetForm}
       />
+      
+      {/* Loader overlay durante upload */}
+      {isLoading && (
+        <div className="fixed inset-0 z-50">
+          <div className="min-h-screen flex items-center justify-center bg-zinc-600 p-4">
+            <span className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

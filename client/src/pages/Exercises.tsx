@@ -197,8 +197,8 @@ export default function Exercises() {
         <h1 className="text-3xl font-bold text-amber-500 mb-6 hidden md:block">Esercizi</h1>
       
         {loading ? (
-          <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500"></div>
+          <div className="min-h-screen flex items-center justify-center bg-zinc-600 p-4">
+            <span className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></span>
           </div>
         ) : error ? (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -212,8 +212,16 @@ export default function Exercises() {
             )}
           </div>
         ) : exercises.length === 0 ? (
-          <div className="text-center py-8 text-white">
-            Nessun esercizio disponibile.
+          <div className="flex flex-col items-center justify-center bg-zinc-200 rounded-xl p-8 mt-6 text-center">
+            <img src="/assets/pictures/brain-lift.png" alt="Esercizi" className="w-60 h-60 mb-4" />
+            <h2 className="text-xl font-semibold text-zinc-900 mb-2">Non ci sono ancora esercizi</h2>
+            <p className="text-zinc-700 mb-4">Aggiungi il tuo primo esercizio per iniziare.</p>
+            <Link
+              to="/addexercises"
+              className="px-4 py-2 bg-amber-500 text-zinc-900 rounded hover:bg-amber-600 cursor-pointer font-semibold shadow"
+            >
+              + Aggiungi il tuo primo esercizio
+            </Link>
           </div>
         ) : (
           <>
