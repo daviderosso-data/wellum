@@ -233,9 +233,25 @@ export default function ExercisesSheets() {
             </div>
           </div>
         ) : loading ? (
-          <p>Caricamento...</p>
+          <div className="min-h-screen flex items-center justify-center bg-zinc-600 p-4">
+            <span className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></span>
+          </div>
         ) : sheets.length === 0 ? (
-          <p>Nessuna scheda trovata.</p>
+          <div className="flex flex-col items-center justify-center bg-zinc-200 rounded-xl p-8 mt-6 text-center">
+            <img
+              src="/assets/pictures/brain-run.png"
+              alt="Nessuna scheda"
+              className="w-56 h-56 object-contain mb-4 opacity-90"
+            />
+            <h2 className="text-xl font-semibold text-zinc-900 mb-2">Non hai ancora creato una scheda</h2>
+            <p className="text-zinc-700 mb-4">Crea la tua prima scheda di allenamento per iniziare.</p>
+            <button
+              className="px-4 py-2 bg-amber-500 text-zinc-900 rounded hover:bg-amber-600 cursor-pointer font-semibold shadow"
+              onClick={() => setShowModal(true)}
+            >
+              + Crea una nuova scheda
+            </button>
+          </div>
         ) : (
           <div className="space-y-4">
             {sheets.map(sheet => (

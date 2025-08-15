@@ -30,8 +30,8 @@ const monthNames = [
   'Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
   'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'
 ];
+const weekDays = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
 
-const weekDays = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
 
 export default function AgendaPage() {
   const { user, isSignedIn, isLoaded } = useUser();
@@ -56,15 +56,37 @@ export default function AgendaPage() {
   const apiRef = useRef(api);
   const controllerRef = useRef<AbortController | null>(null);
 
+  const [errorVisible, setErrorVisible] = useState(false);
+  const errorDelayRef = useRef<number | null>(null);
+
+  const startErrorDelay = () => {
+    setErrorVisible(false);
+    if (errorDelayRef.current) clearTimeout(errorDelayRef.current);
+    errorDelayRef.current = window.setTimeout(() => setErrorVisible(true), 5000);
+  };
+  const clearErrorDelay = () => {
+    if (errorDelayRef.current) {
+      clearTimeout(errorDelayRef.current);
+      errorDelayRef.current = null;
+    }
+    setErrorVisible(false);
+  };
   const log = (...args: unknown[]) => console.log('[Agenda]', ...args);
 
-  useEffect(() => {
-    isMounted.current = true;
+  const toLocalYMD = (d: Date) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+useEffect(() => {
+ isMounted.current = true;
     log('mount -> isLoaded:', isLoaded, 'isSignedIn:', isSignedIn, 'userId:', user?.id);
     return () => {
       log('unmount -> aborting any in-flight requests');
       isMounted.current = false;
       controllerRef.current?.abort('component unmounted');
+      if (errorDelayRef.current) clearTimeout(errorDelayRef.current);
     };
   }, []);
 
@@ -81,18 +103,19 @@ export default function AgendaPage() {
       return;
     }
     if (!isSignedIn || !user?.id) {
+      startErrorDelay();
       log('skip fetch: user not signed in or missing id');
       setLoading(false);
       setError("Devi effettuare l'accesso per visualizzare i tuoi workout");
       return;
     }
 
-    // Aborta eventuale richiesta precedente
     controllerRef.current?.abort('new fetch requested');
     const controller = new AbortController();
     controllerRef.current = controller;
 
     try {
+      startErrorDelay(); 
       setLoading(true);
       setError(null);
       log('fetch start -> calling endpoints', {
@@ -126,9 +149,10 @@ export default function AgendaPage() {
 
       if (!workoutsOk && !sheetsOk) {
         log('both requests failed -> setting error');
-        if (isMounted.current) setError('Impossibile caricare i dati. Verifica la connessione o l\'autenticazione e riprova.');
+        if (isMounted.current) setError("Impossibile caricare i dati. Verifica la connessione o l'autenticazione e riprova.");
       } else if (isMounted.current) {
         setError(null);
+        clearErrorDelay(); 
       }
     } catch (err) {
       log('fetchData fatal error:', err);
@@ -157,23 +181,32 @@ export default function AgendaPage() {
     fetchData();
   }, [isLoaded, isSignedIn, user?.id]);
 
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) {
+      startErrorDelay();
+    } else if (isLoaded && isSignedIn) {
+      clearErrorDelay();
+    }
+  }, [isLoaded, isSignedIn]);
+
   const sheetNameMap: Record<string, string> = {};
   sheets.forEach(s => { sheetNameMap[s._id] = s.name; });
 
   const workoutsByDay: Record<string, Workout[]> = {};
   workouts.forEach(w => {
-    const day = new Date(w.completedAt).toISOString().slice(0, 10);
+    const day = toLocalYMD(new Date(w.completedAt));
     (workoutsByDay[day] ||= []).push(w);
   });
 
   const selectedWorkouts = selectedDay ? (workoutsByDay[selectedDay] || []) : [];
 
-  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-  const firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay();
+ const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const jsFirstDay = new Date(currentYear, currentMonth, 1).getDay();
+  const offset = (jsFirstDay + 6) % 7; // Lunedì-first
   const calendarDays: (string | null)[] = [];
-  for (let i = 0; i < firstDayOfWeek; i++) calendarDays.push(null);
+  for (let i = 0; i < offset; i++) calendarDays.push(null);
   for (let d = 1; d <= daysInMonth; d++) {
-    const dateStr = new Date(currentYear, currentMonth, d).toISOString().slice(0, 10);
+    const dateStr = toLocalYMD(new Date(currentYear, currentMonth, d));
     calendarDays.push(dateStr);
   }
 
@@ -228,7 +261,14 @@ export default function AgendaPage() {
     }
   };
 
-  if (isLoaded && !isSignedIn) {
+   if (isLoaded && !isSignedIn) {
+    if (!errorVisible) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-zinc-600 p-4">
+          <span className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></span>
+        </div>
+      );
+    }
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-600 p-4">
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 max-w-md w-full">
@@ -286,22 +326,24 @@ export default function AgendaPage() {
 
       {/* Contenuto principale */}
       <div className="flex-1 p-4 md:p-6 md:ml-64">
+
         {/* Messaggi di errore */}
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
-            <button
-              onClick={() => {
-                log('Retry clicked');
-                setError(null);
-                fetchData();
-              }}
-              className="ml-4 px-2 py-1 bg-red-200 hover:bg-red-300 rounded text-sm"
-            >
-              Riprova
-            </button>
-          </div>
-        )}
+        {errorVisible && error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          {error}
+          <button
+            onClick={() => {
+              log('Retry clicked');
+              setError(null);
+              fetchData();
+            }}
+            className="ml-4 px-2 py-1 bg-red-200 hover:bg-red-300 rounded text-sm"
+          >
+            Riprova
+          </button>
+        </div>
+      )}
+
 
         {/* Titolo desktop */}
         <h1 className="text-3xl text-amber-500 font-bold mb-6 hidden md:block">Agenda</h1>
@@ -320,21 +362,38 @@ export default function AgendaPage() {
         </div>
 
         {/* Stato: loading / empty / calendario */}
-        {loading ? (
+        {loading || (error && !errorVisible) ? (
           <div className="flex flex-col justify-center items-center h-64">
             <span className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500 mb-4"></span>
             <p className="text-amber-500">Caricamento agenda...</p>
           </div>
         ) : workouts.length === 0 ? (
-          <div className="bg-amber-100 text-amber-800 rounded-xl p-4 shadow-lg text-center">
-            <p className="font-medium">Non hai ancora registrato workout.</p>
-            <p className="mt-2">Completa un allenamento per vederlo qui!</p>
+          <div className="relative rounded-xl overflow-hidden shadow-lg h-120 md:h-80 flex items-center justify-center">
+            <div
+              className="absolute inset-0 bg-[url('/assets/pictures/calendario.png')] bg-cover bg-center blur-[2px] scale-105"
+              aria-hidden="true"
+            />
+            <div className="absolute inset-0 bg-zinc-700/40" />
+            <div className="relative z-10 bg-white/90 rounded-lg p-4 md:p-6 text-center max-w-lg mx-4">
+              <h3 className="text-zinc-900 font-semibold mb-2">
+                Non hai ancora registrato nessun workout
+              </h3>
+              <p className="text-zinc-700 mb-4">
+                Vai ad allenarti e torna per vederlo a calendario.
+              </p>
+              <Link
+                to="/workoutguide"
+                className="inline-block px-4 py-2 bg-amber-500 text-zinc-900 rounded hover:bg-amber-600 font-semibold"
+              >
+                Crea il tuo primo workout
+              </Link>
+            </div>
           </div>
         ) : (
           <div className="bg-zinc-200 rounded-xl shadow-lg p-2 md:p-4">
-            {/* Intestazione giorni */}
+
             <div className="grid grid-cols-7 gap-1 md:gap-2 mb-1 md:mb-2">
-              {weekDays.map(day => (
+              {weekDays.map((day) => (
                 <div key={day} className="font-medium text-center text-zinc-900 text-xs md:text-sm">
                   {day}
                 </div>
@@ -342,19 +401,20 @@ export default function AgendaPage() {
             </div>
 
             {/* Griglia giorni - click sui giorni con workout */}
-            <div className="grid grid-cols-7 gap-1 md:gap-2">
-              {calendarDays.map((dateStr, idx) => {
-                const isToday = dateStr === new Date().toISOString().slice(0, 10);
+                <div className="grid grid-cols-7 gap-1 md:gap-2">
+               {calendarDays.map((dateStr, idx) => {
+                const isToday = dateStr === toLocalYMD(new Date());
                 const hasWorkout = !!(dateStr && workoutsByDay[dateStr]);
                 const dayNumber = dateStr ? Number(dateStr.slice(-2)) : '';
-
+                const col = idx % 7;
+                const isSunday = col === 6;
                 return (
                   <div
                     key={idx}
                     className={`md:h-16 lg:h-20 border border-amber-500/60 rounded flex flex-col items-center justify-start p-1 transition
                       ${isToday ? 'ring-1 ring-gray-400' : ''}
                       ${hasWorkout ? 'bg-amber-500/40 hover:bg-zinc-100 cursor-pointer' : 'hover:bg-zinc-100 cursor-default'}
-                      ${!dateStr ? 'bg-zinc-300/30' : ''}
++                      ${!dateStr ? 'bg-zinc-300/30' : isSunday && !hasWorkout ? 'bg-zinc-300/40' : ''}
                     `}
                     onClick={() => {
                       if (!dateStr || !hasWorkout) return;

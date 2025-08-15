@@ -6,7 +6,6 @@
 // It includes buttons to start the workout or go back to the previous screen.
 // The component uses React hooks for state management and side effects, ensuring a smooth user experience.
 
-
 import { useEffect, useRef, useState } from 'react'
 import { useApi } from '../lib/utils'
 
@@ -35,7 +34,7 @@ const WorkoutSetup = ({ userId, onStart, onBack }: Props) => {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const loadSheets = async (signal?: AbortSignal) => {
+  const loadSheets = async (signal: AbortSignal) => {
     if (!userId) {
       setSheets([])
       return
@@ -43,13 +42,15 @@ const WorkoutSetup = ({ userId, onStart, onBack }: Props) => {
     try {
       setIsLoading(true)
       setError(null)
-      if (!signal) throw new Error('AbortSignal is required')
-      const data = await apiRef.current.get<Sheet[]>(`/api/sheet/user/${userId}`, { signal })
+      const options = { signal }
+      const data = await apiRef.current.get<Sheet[]>(`/api/sheet/user/${userId}`, options)
       setSheets(Array.isArray(data) ? data : [])
     } catch (err: unknown) {
       if (typeof err === 'object' && err !== null) {
         if ((err as { name?: string }).name === 'AbortError') return
-        const status = (err as { status?: number; response?: { status?: number } }).status || (err as { response?: { status?: number } }).response?.status
+        const status =
+          (err as { status?: number; response?: { status?: number } }).status ||
+          (err as { response?: { status?: number } }).response?.status
         if (status === 401 || status === 403) {
           setError('Non autenticato. Accedi per vedere le tue schede.')
         } else {
@@ -91,7 +92,10 @@ const WorkoutSetup = ({ userId, onStart, onBack }: Props) => {
               <span>{error}</span>
               <button
                 className="ml-2 px-2 py-1 bg-red-200 hover:bg-red-300 rounded text-xs"
-                onClick={() => loadSheets()}
+                onClick={() => {
+                  const controller = new AbortController()
+                  loadSheets(controller.signal)
+                }}
               >
                 Riprova
               </button>
@@ -101,12 +105,20 @@ const WorkoutSetup = ({ userId, onStart, onBack }: Props) => {
           <select
             value={selectedSheet}
             onChange={(e) => setSelectedSheet(e.target.value)}
-            className="w-full border px-3 py-2 rounded disabled:opacity-60"
+            className={`w-full border px-3 py-2 rounded disabled:opacity-60 ${sheets.length === 0 ? ' font-semibold' : ''}`}
             disabled={isLoading || !!error}
           >
-            <option value="">{isLoading ? 'Caricamento...' : '-- Seleziona --'}</option>
+            {/* Placeholder dinamico */}
+            <option value="" disabled>
+              {isLoading
+                ? 'Caricamento...'
+                : sheets.length === 0
+                ? 'Non hai ancora nessuna scheda'
+                : '-- Seleziona --'}
+            </option>
+
             {sheets.map((sheet) => (
-              <option key={sheet._id} value={sheet._id}>
+              <option key={sheet._id} value={sheet._id} className="text-zinc-900">
                 {sheet.name}
               </option>
             ))}
