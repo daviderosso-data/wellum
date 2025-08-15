@@ -5,11 +5,10 @@
 // It also includes a modal for confirming the completion of the workout and saving it to the user's calendar.
 // The workout can be paused, resumed, and navigated through exercises
 
-
 import { useEffect, useRef, useState } from 'react'
 import WorkoutCompleteModal from './workoutCompleteModal'
 import { useUser } from "@clerk/clerk-react";
-const API_URL = import.meta.env.VITE_URL_SERVER 
+import { useApi } from '../lib/utils';
 
 type Exercise = {
   exerciseId: string
@@ -91,6 +90,9 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
   const [isRunning, setIsRunning] = useState(false)
   const [phase, setPhase] = useState<'idle' | 'workout' | 'rest'>('idle')
   const { user } = useUser();
+  const api = useApi();
+  const apiRef = useRef(api);
+  useEffect(() => { apiRef.current = api; }, [api]);
   
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [currentWeight, setCurrentWeight] = useState(0);
@@ -100,33 +102,61 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
   const current = exercises[currentIndex]
   const totalReps = current?.repetitions || 0
 
+  const authedFetch = async (path: string, init?: RequestInit) => {
+    const token = await apiRef.current.getToken();
+    const baseUrl = apiRef.current.getBaseUrl();
+    const headers = new Headers(init?.headers as HeadersInit | undefined);
+    if (token) headers.set('Authorization', `Bearer ${token}`);
+    return fetch(`${baseUrl}${path}`, {
+      ...init,
+      headers,
+      credentials: 'include',
+      mode: 'cors',
+    });
+  };
+
   useEffect(() => {
-    fetch(`${API_URL}/api/sheet/${sheetId}`)
-      .then(res => res.json())
-      .then(data => {
+    const controller = new AbortController();
+    (async () => {
+      try {
+        const res = await authedFetch(`/api/sheet/${sheetId}`, { signal: controller.signal });
+        if (!res.ok) throw new Error(`GET sheet ${res.status}`);
+        const data = await res.json();
         setExercises(data.exercises || []);
         if (data.exercises && data.exercises.length > 0) {
           setCurrentWeight(data.exercises[0].weight || 0);
         }
-      })
-  }, [sheetId])
+      } catch (e) {
+        if (e && typeof e === 'object' && 'name' in e && (e as { name?: string }).name !== 'AbortError') {
+          console.error('Errore caricamento scheda:', e);
+        }
+      }
+    })();
+    return () => controller.abort();
+  }, [sheetId]);
 
   useEffect(() => {
     const loadExerciseData = async () => {
-      const ex = exercises[currentIndex]
+      const ex = exercises[currentIndex];
       if (ex?.exerciseId) {
+        const controller = new AbortController();
         try {
-          const res = await fetch(`${API_URL}/api/exercises/${ex.exerciseId}`)
-          const data = await res.json()
-          setExerciseData(data)
-          setCurrentWeight(ex.weight || 0)
-        } catch {
-          setExerciseData(null)
+          const res = await authedFetch(`/api/exercises/${ex.exerciseId}`, { signal: controller.signal });
+          if (!res.ok) throw new Error(`GET exercise ${res.status}`);
+          const data = await res.json();
+          setExerciseData(data);
+          setCurrentWeight(ex.weight || 0);
+        } catch (e) {
+          if (typeof e === 'object' && e !== null && 'name' in e && (e as { name?: string }).name !== 'AbortError') {
+            console.error('Errore caricamento esercizio:', e);
+            setExerciseData(null);
+          }
         }
+        return () => controller.abort();
       }
-    }
-    if (exercises.length > 0) loadExerciseData()
-  }, [currentIndex, exercises])
+    };
+    if (exercises.length > 0) loadExerciseData();
+  }, [currentIndex, exercises]);
 
   useEffect(() => {
     if (isRunning) {
@@ -160,23 +190,21 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
     updateExerciseWeight(weight);
   }
 
-  const updateExerciseWeight = async (weight: number) => {
+   const updateExerciseWeight = async (weight: number) => {
     const updatedExercises = [...exercises];
-    updatedExercises[currentIndex] = {
-      ...updatedExercises[currentIndex],
-      weight: weight
-    };
-    
+    updatedExercises[currentIndex] = { ...updatedExercises[currentIndex], weight };
+
     setExercises(updatedExercises);
     
     try {
-      await fetch(`${API_URL}/api/sheet/${sheetId}`, {
+      const res = await authedFetch(`/api/sheet/${sheetId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          exercises: updatedExercises
-        }),
+        body: JSON.stringify({ exercises: updatedExercises }),
       });
+      if (!res.ok) {
+        console.error('Errore salvataggio peso:', res.status);
+      }
     } catch (error) {
       console.error("Errore nel salvataggio del peso:", error);
     }
@@ -239,17 +267,26 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
 
   const handleSaveWorkout = async () => {
     if (!user?.id) return;
-    await fetch(`${API_URL}/api/workouts`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userId: user.id,
-        sheetId,
-        totalSeconds: totalWorkoutSeconds,
-        exercises,
-      }),
-    });
-    alert("Allenamento salvato nel calendario!");
+    try {
+      const res = await authedFetch(`/api/workouts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.id,
+          sheetId,
+          totalSeconds: totalWorkoutSeconds,
+          exercises,
+        }),
+      });
+      if (!res.ok) {
+        alert("Errore nel salvataggio dell'allenamento.");
+        return;
+      }
+      alert("Allenamento salvato nel calendario!");
+    } catch (e) {
+      console.error('Errore salvataggio workout:', e);
+      alert("Errore di rete nel salvataggio.");
+    }
   };
 
   if (exercises.length === 0) {

@@ -16,7 +16,7 @@ exports.createExerciseWithImage = async ({ name, description, imageUrl, group, v
 };
 
 // Lista tutti gli esercizi
-exports.getExercises = async (req, res) => {
+exports.getExercises =  async (req, res) => {
   const exercises = await Exercise.find()
   res.json(exercises)
 }
@@ -35,6 +35,24 @@ exports.updateExercise = async (req, res) => {
 
 // Cancella esercizio
 exports.deleteExercise = async (req, res) => {
-  await Exercise.findByIdAndDelete(req.params.id)
-  res.json({ message: 'Esercizio cancellato' })
-}
+  try {
+    // Verifica che l'utente sia autenticato
+    if (!req.auth || !req.auth.userId) {
+      return res.status(401).json({ error: 'Utente non autenticato' });
+    }
+    
+    console.log("Eliminazione esercizio richiesta da:", req.auth.userId);
+    
+    // Procedi con la cancellazione
+    const result = await Exercise.findByIdAndDelete(req.params.id);
+    
+    if (!result) {
+      return res.status(404).json({ error: 'Esercizio non trovato' });
+    }
+    
+    res.status(200).json({ message: 'Esercizio eliminato con successo' });
+  } catch (error) {
+    console.error("Errore eliminazione esercizio:", error);
+    res.status(500).json({ error: "Errore durante l'eliminazione dell'esercizio" });
+  }
+};

@@ -4,12 +4,12 @@
 // The page fetches exercise data from an API and uses a responsive grid layout to display exercises.
 // It includes a sidebar for navigation and a header with the page title. 
 
-
 import { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import ExerciseList from "../components/ExpCards";
 import { Link } from "react-router-dom";
-const API_URL = import.meta.env.VITE_URL_SERVER 
+import { useApi } from "../lib/utils"; // Importa il wrapper API da utils.ts
+import { useUser } from "@clerk/clerk-react"; 
 
 type Exercise = {
   _id: string;
@@ -26,13 +26,39 @@ export default function Exercises() {
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [groupFilter, setGroupFilter] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const api = useApi(); 
+  const { isLoaded, isSignedIn } = useUser();
 
   useEffect(() => {
-    fetch(`${API_URL}/api/exercises`)
-      .then(res => res.json())
-      .then(setExercises)
-      .catch(err => console.error("Errore nel caricamento esercizi:", err));
-  }, []);
+    if (!isLoaded) return;
+    
+    if (!isSignedIn) {
+      setLoading(false);
+      setError("Devi accedere per visualizzare gli esercizi");
+      return;
+    }
+    
+    const fetchExercises = async () => {
+      try {
+        setLoading(true);
+        const controller = new AbortController();
+        const data = await api.get('/api/exercises', { signal: controller.signal });
+        console.log("Esercizi caricati:", data);
+        setExercises(Array.isArray(data) ? data : []);
+        setError("");
+      } catch (err) {
+        console.error("Errore nel caricamento esercizi:", err);
+        setError("Impossibile caricare gli esercizi. Riprova più tardi.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchExercises();
+  }, [isLoaded, isSignedIn]); 
 
   const muscleGroups = Array.from(new Set(exercises.map(ex => ex.group).filter(Boolean)));
 
@@ -75,7 +101,6 @@ export default function Exercises() {
       );
     }
 
-    
     const pageButtons = [];
     const maxVisibleButtons = 5;
     
@@ -168,28 +193,66 @@ export default function Exercises() {
         <h1 className="text-xl font-bold text-amber-500 ml-3">Esercizi</h1>
       </div>
       
-      
       <div className="flex-1 p-4 md:p-6 md:ml-64 w-full mt-14 md:mt-0">
         <h1 className="text-3xl font-bold text-amber-500 mb-6 hidden md:block">Esercizi</h1>
       
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
-          <select
-            className="p-2 border bg-zinc-200 text-zinc-900 rounded border-amber-500 w-full md:w-1/4"
-            value={groupFilter}
-            onChange={e => setGroupFilter(e.target.value)}
-          >
-            <option value="">Tutti i gruppi muscolari</option>
-            {muscleGroups.map(group => (
-              <option key={group} value={group}>{group}</option>
-            ))}
-          </select>
-        </div>
-        
-        <ExerciseList exercises={paginatedExercises} />
-        
-        <div className="flex flex-wrap justify-center mt-6 gap-2">
-          {renderPaginationButtons()}
-        </div>
+        {loading ? (
+          <div className="min-h-screen flex items-center justify-center bg-zinc-600 p-4">
+            <span className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></span>
+          </div>
+        ) : error ? (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            {error}
+            {!isSignedIn && (
+              <div className="mt-4">
+                <Link to="/login" className="bg-amber-500 text-zinc-900 px-4 py-2 rounded font-semibold">
+                  Accedi
+                </Link>
+              </div>
+            )}
+          </div>
+        ) : exercises.length === 0 ? (
+          <div className="flex flex-col items-center justify-center bg-zinc-200 rounded-xl p-8 mt-6 text-center">
+            <img src="/assets/pictures/brain-lift.png" alt="Esercizi" className="w-60 h-60 mb-4" />
+            <h2 className="text-xl font-semibold text-zinc-900 mb-2">Non ci sono ancora esercizi</h2>
+            <p className="text-zinc-700 mb-4">Aggiungi il tuo primo esercizio per iniziare.</p>
+            <Link
+              to="/addexercises"
+              className="px-4 py-2 bg-amber-500 text-zinc-900 rounded hover:bg-amber-600 cursor-pointer font-semibold shadow"
+            >
+              + Aggiungi il tuo primo esercizio
+            </Link>
+          </div>
+        ) : (
+          <>
+            <div className="flex flex-col md:flex-row gap-4 mb-6">
+              <select
+                className="p-2 border bg-zinc-200 text-zinc-900 rounded border-amber-500 w-full md:w-1/4"
+                value={groupFilter}
+                onChange={e => setGroupFilter(e.target.value)}
+              >
+                <option value="">Tutti i gruppi muscolari</option>
+                {muscleGroups.map(group => (
+                  <option key={group} value={group}>{group}</option>
+                ))}
+              </select>
+            </div>
+            
+            {paginatedExercises.length > 0 ? (
+              <ExerciseList exercises={paginatedExercises} />
+            ) : (
+              <div className="text-center py-8 text-white">
+                Nessun esercizio trovato per il filtro selezionato.
+              </div>
+            )}
+            
+            {totalPages > 0 && (
+              <div className="flex flex-wrap justify-center mt-6 gap-2">
+                {renderPaginationButtons()}
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
