@@ -1,13 +1,22 @@
 const express = require('express');
 const router = express.Router();
 const workoutController = require('../controllers/workoutController');
+const { requireAuth } = require('@clerk/express');
 
-// Save a new workout
-router.post('/', workoutController.createWorkout);
+const authenticate = requireAuth({
+  onError: (err, req, res, next) => {
+    console.error('Errore autenticazione:', err);
+    res.status(401).json({ error: 'Autenticazione richiesta' });
+  }
+});
 
-// Get all workouts for a user
-router.get('/user/:userId', workoutController.getUserWorkouts);
+// Crea un nuovo workout ()
+router.post('/', authenticate, workoutController.createWorkout);
 
-router.delete('/:id', workoutController.deletWorkout);
+router.get('/user/:userId', authenticate, workoutController.getUserWorkouts);
+
+router.get('/:id', authenticate, workoutController.getWorkoutById);
+
+router.delete('/:id', authenticate, workoutController.deleteWorkout);
 
 module.exports = router;

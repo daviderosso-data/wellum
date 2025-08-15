@@ -7,10 +7,8 @@
 // The component uses React hooks for state management and side effects, ensuring a smooth user experience.
 
 
-import { useEffect, useState } from 'react'
-
-
-const API_URL = import.meta.env.VITE_URL_SERVER 
+import { useEffect, useRef, useState } from 'react'
+import { useApi } from '../lib/utils'
 
 type Sheet = {
   _id: string
@@ -24,15 +22,52 @@ type Props = {
 }
 
 const WorkoutSetup = ({ userId, onStart, onBack }: Props) => {
+  const api = useApi()
+  const apiRef = useRef(api)
+  useEffect(() => {
+    apiRef.current = api
+  }, [api])
+
   const [sheets, setSheets] = useState<Sheet[]>([])
   const [selectedSheet, setSelectedSheet] = useState('')
   const [restTime, setRestTime] = useState(1)
 
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const loadSheets = async (signal?: AbortSignal) => {
+    if (!userId) {
+      setSheets([])
+      return
+    }
+    try {
+      setIsLoading(true)
+      setError(null)
+      if (!signal) throw new Error('AbortSignal is required')
+      const data = await apiRef.current.get<Sheet[]>(`/api/sheet/user/${userId}`, { signal })
+      setSheets(Array.isArray(data) ? data : [])
+    } catch (err: unknown) {
+      if (typeof err === 'object' && err !== null) {
+        if ((err as { name?: string }).name === 'AbortError') return
+        const status = (err as { status?: number; response?: { status?: number } }).status || (err as { response?: { status?: number } }).response?.status
+        if (status === 401 || status === 403) {
+          setError('Non autenticato. Accedi per vedere le tue schede.')
+        } else {
+          setError('Errore nel caricamento delle schede. Riprova.')
+        }
+      } else {
+        setError('Errore nel caricamento delle schede. Riprova.')
+      }
+      setSheets([])
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   useEffect(() => {
-    if (!userId) return
-    fetch(`${API_URL}/api/sheet/user/${userId}`)
-      .then((res) => res.json())
-      .then((data) => setSheets(data))
+    const controller = new AbortController()
+    loadSheets(controller.signal)
+    return () => controller.abort()
   }, [userId])
 
   const handleStart = () => {
@@ -50,12 +85,26 @@ const WorkoutSetup = ({ userId, onStart, onBack }: Props) => {
           <label className="block text-sm font-medium text-zinc-900 mb-1">
             Scegli una delle tue schede
           </label>
+
+          {error && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded mb-2 text-sm flex items-center justify-between">
+              <span>{error}</span>
+              <button
+                className="ml-2 px-2 py-1 bg-red-200 hover:bg-red-300 rounded text-xs"
+                onClick={() => loadSheets()}
+              >
+                Riprova
+              </button>
+            </div>
+          )}
+
           <select
             value={selectedSheet}
             onChange={(e) => setSelectedSheet(e.target.value)}
-            className="w-full border px-3 py-2 rounded"
+            className="w-full border px-3 py-2 rounded disabled:opacity-60"
+            disabled={isLoading || !!error}
           >
-            <option value="">-- Seleziona --</option>
+            <option value="">{isLoading ? 'Caricamento...' : '-- Seleziona --'}</option>
             {sheets.map((sheet) => (
               <option key={sheet._id} value={sheet._id}>
                 {sheet.name}

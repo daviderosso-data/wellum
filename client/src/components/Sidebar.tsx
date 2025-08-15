@@ -70,7 +70,6 @@ const Sidebar = () => {
       {open && (
   <div className="fixed inset-0 z-50 bg-black bg-opacity-30 flex">
     <div className="w-64 h-full bg-zinc-800 shadow-md p-6 relative animate-slide-in-left">
-      {/* Tasto chiudi in alto a destra */}
       <button
         onClick={() => setOpen(false)}
         className="absolute top-4 right-4 text-white hover:text-amber-500"

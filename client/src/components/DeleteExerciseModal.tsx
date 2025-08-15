@@ -1,13 +1,14 @@
 // Modal to delete an exercise
-// This component allows users to confirm the deletion of an exercise by entering a security code. (temporary solution)
-// If the code matches a predefined value, the exercise is deleted from the server. 
+// This component allows users to confirm the deletion of an exercise by entering a security code.
+// If the code matches a predefined value, the exercise is deleted from the server.
 // It provides feedback on success or failure of the deletion operation and can trigger a callback
 // function to refresh the exercise list or redirect the user after deletion.
 // The component uses React hooks for state management and side effects, and fetches data from an API endpoint.
 
 import { useState } from 'react';
+import { useApi } from '../lib/utils'; 
+import { useUser } from '@clerk/clerk-react'; 
 
-const API_URL = import.meta.env.VITE_URL_SERVER;
 const DELETE_CODE = import.meta.env.VITE_DELETE_CODE;
 
 type DeleteExerciseModalProps = {
@@ -20,33 +21,40 @@ const DeleteExerciseModal = ({ exerciseId, onClose, onDeleted }: DeleteExerciseM
   const [deleteCode, setDeleteCode] = useState("");
   const [deleteError, setDeleteError] = useState("");
   const [deleteSuccess, setDeleteSuccess] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const api = useApi(); 
+  const { isSignedIn } = useUser();
 
   const handleDelete = async () => {
+    if (!isSignedIn) {
+      setDeleteError("Devi essere autenticato per eliminare un esercizio");
+      return;
+    }
+    
     if (deleteCode !== DELETE_CODE) {
       setDeleteError("Codice non valido!");
       return;
     }
     
     try {
-      const response = await fetch(`${API_URL}/api/exercises/${exerciseId}`, { 
-        method: "DELETE" 
-      });
+      setIsLoading(true);
+      await api.delete(`/api/exercises/${exerciseId}`);
       
-      if (response.ok) {
-        setDeleteError("");
-        setDeleteSuccess(true);
-        setTimeout(() => {
-          if (onDeleted) {
-            onDeleted();
-          } else {
-            window.location.reload(); 
-          }
-        }, 2000);
-      } else {
-        setDeleteError("Errore durante l'eliminazione. Riprova.");
-      }
-    } catch {
-      setDeleteError("Errore di rete. Riprova.");
+      setDeleteError("");
+      setDeleteSuccess(true);
+      setTimeout(() => {
+        if (onDeleted) {
+          onDeleted();
+        } else {
+          window.location.reload(); 
+        }
+      }, 2000);
+    } catch (error) {
+      console.error("Errore durante l'eliminazione:", error);
+      setDeleteError("Errore durante l'eliminazione. Verifica la tua autenticazione e riprova.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -59,7 +67,7 @@ const DeleteExerciseModal = ({ exerciseId, onClose, onDeleted }: DeleteExerciseM
       <div className="bg-white rounded shadow-lg p-6 max-w-sm w-full text-center">
         <p className="mb-4 text-lg">
           {deleteSuccess 
-            ? " Esercizio eliminato con successo!" 
+            ? "Esercizio eliminato con successo!" 
             : "Sei sicuro di voler eliminare questo esercizio?"}
         </p>
         
@@ -84,14 +92,16 @@ const DeleteExerciseModal = ({ exerciseId, onClose, onDeleted }: DeleteExerciseM
         {!deleteSuccess && (
           <div className="flex justify-center gap-4">
             <button
-              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+              className={`px-4 py-2 ${isLoading ? 'bg-gray-500' : 'bg-red-600 hover:bg-red-700'} text-white rounded`}
               onClick={handleDelete}
+              disabled={isLoading}
             >
-              Sì, elimina
+              {isLoading ? 'Eliminazione...' : 'Sì, elimina'}
             </button>
             <button
               className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
               onClick={handleCancel}
+              disabled={isLoading}
             >
               Annulla
             </button>

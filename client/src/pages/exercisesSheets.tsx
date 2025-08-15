@@ -1,18 +1,9 @@
-//  ExercisesSheets
-// This page allows users to manage their workout sheets, including creating new sheets, adding exercises,
-// and deleting existing sheets. It fetches available exercises from an API and allows users to select
-// exercises to add to their sheets. The page is styled with Tailwind CSS for a modern look and is responsive to different screen sizes.
-// It includes a sidebar for navigation and uses modals for creating sheets and confirming deletions.
-// The page also supports searching for exercises and displaying them in a dropdown menu for easy selection.
-
-
-
 import { useEffect, useState } from "react";
 import { useUser } from "@clerk/clerk-react";
+import { useApi } from "../lib/utils"; 
 import Sidebar from "../components/Sidebar";
 import SheetCard from "../components/sheetCard";
 import { Link } from "react-router-dom";
-const API_URL = import.meta.env.VITE_URL_SERVER 
 
 type Exercise = {
   _id: string;
@@ -53,37 +44,54 @@ export default function ExercisesSheets() {
   const [availableExercises, setAvailableExercises] = useState<Exercise[]>([]);
   const [selectedExercises, setSelectedExercises] = useState<ExerciseItem[]>([]);
   
-  // Stati per la ricerca esercizi
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredExercises, setFilteredExercises] = useState<Exercise[]>([]);
   const [showExerciseDropdown, setShowExerciseDropdown] = useState(false);
   const [currentExercise, setCurrentExercise] = useState<Exercise | null>(null);
   
-  // Stati per i dettagli dell'esercizio
   const [currentSerie, setCurrentSerie] = useState<number>(3);
   const [currentReps, setCurrentReps] = useState<number>(10);
   const [currentWeight, setCurrentWeight] = useState<number | undefined>(undefined);
   const [currentNotes, setCurrentNotes] = useState<string>("");
 
-  const { user } = useUser();
+  const { user, isLoaded, isSignedIn } = useUser();
+  const api = useApi(); 
 
   useEffect(() => {
-    if (!user?.id) return;
-    fetch(`${API_URL}/api/sheet/user/${user?.id}`)
-      .then(res => res.json())
-      .then(data => setSheets(data))
-      .catch(() => setSheets([]))
-      .finally(() => setLoading(false));
-  }, [user?.id]);
+    if (!isLoaded || !isSignedIn || !user?.id) return;
+    
+    const fetchSheets = async () => {
+      try {
+        setLoading(true);
+        const controller = new AbortController();
+        const data = await api.get<Sheet[]>(`/api/sheet/user/${user.id}`, { signal: controller.signal });
+        setSheets(data);
+      } catch (error) {
+        console.error("Errore caricamento schede:", error);
+        setSheets([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchSheets();
+  }, [user?.id, isLoaded, isSignedIn]);
   
   useEffect(() => {
-    if (showModal) {
-      fetch(`${API_URL}/api/exercises`)
-        .then(res => res.json())
-        .then(data => setAvailableExercises(data))
-        .catch(err => console.error("Errore caricamento esercizi:", err));
-    }
-  }, [showModal]);
+    if (!showModal || !isSignedIn) return;
+    
+    const fetchExercises = async () => {
+      try {
+        const controller = new AbortController();
+        const data = await api.get<Exercise[]>('/api/exercises', { signal: controller.signal });
+        setAvailableExercises(data);
+      } catch (error) {
+        console.error("Errore caricamento esercizi:", error);
+      }
+    };
+    
+    fetchExercises();
+  }, [showModal, isSignedIn]);
   
   useEffect(() => {
     if (searchQuery.trim() === "") {
@@ -102,25 +110,26 @@ export default function ExercisesSheets() {
 
   const handleCreateSheet = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newSheetName.trim() || !user?.id) return;
+    if (!newSheetName.trim() || !user?.id || !isSignedIn) return;
+    
     setCreating(true);
     try {
-      const res = await fetch(`${API_URL}/api/sheet`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: newSheetName,
-          userID: user.id,
-          exercises: selectedExercises.map(ex => ({
-            exerciseId: ex.exerciseId,
-            serie: ex.serie,
-            repetitions: ex.repetitions,
-            weight: ex.weight,
-            notes: ex.notes
-          })),
-        }),
+      const data = await api.post<Sheet, {
+        name: string;
+        userID: string;
+        exercises: Omit<ExerciseItem, 'exerciseName'>[];
+      }>('/api/sheet', {
+        name: newSheetName,
+        userID: user.id,
+        exercises: selectedExercises.map(ex => ({
+          exerciseId: ex.exerciseId,
+          serie: ex.serie,
+          repetitions: ex.repetitions,
+          weight: ex.weight,
+          notes: ex.notes
+        })),
       });
-      const data = await res.json();
+      
       setCreatedSheet(data);
       setSheets(prev => [data, ...prev]);
       setShowModal(false);
@@ -166,13 +175,15 @@ export default function ExercisesSheets() {
   };
 
   const handleDeleteSheet = async () => {
-    if (!sheetToDelete) return;
+    if (!sheetToDelete || !isSignedIn) return;
+    
     try {
-      await fetch(`${API_URL}/api/sheet/${sheetToDelete._id}`, { method: "DELETE" });
+      await api.delete(`/api/sheet/${sheetToDelete._id}`);
       setSheets(prev => prev.filter(s => s._id !== sheetToDelete._id));
       setShowDeleteModal(false);
       setSheetToDelete(null);
-    } catch {
+    } catch (error) {
+      console.error("Errore durante l'eliminazione:", error);
       alert("Errore durante l'eliminazione della scheda.");
     }
   };
@@ -185,25 +196,23 @@ export default function ExercisesSheets() {
 
   return (
     <div className="flex min-h-screen bg-zinc-600">
-      
-
-      <div className="flex-1 p-6 md:ml-64">
       <div className="fixed top-0 left-0 h-screen w-64 z-10 hidden md:block">
         <Sidebar />
       </div>
       
       <div className="fixed top-0 left-0 right-0 bg-zinc-800 p-3 flex items-center z-20 md:hidden">
-          <Sidebar />
-
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
+        <Sidebar />
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
         
         <Link to="/" className="flex items-center">
           <img src="/assets/pictures/logoAmberTransp.png" className="ml-6 h-8" alt="Wellum logo" />
         </Link>
         <h1 className="text-xl font-bold text-amber-500 ml-3">Schede</h1>
       </div>
+
+      <div className="flex-1 p-6 md:ml-64">
         <div className="flex justify-between items-center mb-6 mt-20">
           <h1 className="text-3xl text-amber-500 font-bold">Le tue schede</h1>
           <button
@@ -213,7 +222,17 @@ export default function ExercisesSheets() {
             + Crea una nuova scheda
           </button>
         </div>
-        {loading ? (
+        
+        {!isSignedIn && isLoaded ? (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            Devi effettuare l'accesso per visualizzare le tue schede.
+            <div className="mt-2">
+              <Link to="/login" className="bg-amber-500 text-zinc-900 px-4 py-2 rounded font-semibold">
+                Accedi
+              </Link>
+            </div>
+          </div>
+        ) : loading ? (
           <p>Caricamento...</p>
         ) : sheets.length === 0 ? (
           <p>Nessuna scheda trovata.</p>
