@@ -34,7 +34,6 @@ type AddExerciseModalProps = {
 const AddExerciseModal = ({ isOpen, onClose, onAddExercise }: AddExerciseModalProps) => {
   const api = useApi();
 
-  // Ref stabile all'API per non ritriggerare l'effetto
   const apiRef = useRef(api);
   useEffect(() => {
     apiRef.current = api;
@@ -51,19 +50,15 @@ const AddExerciseModal = ({ isOpen, onClose, onAddExercise }: AddExerciseModalPr
   const [filteredExercises, setFilteredExercises] = useState<ExerciseDetails[]>([]);
   const [showExerciseDropdown, setShowExerciseDropdown] = useState(false);
 
-  // Stato fetch autenticato
   const [isFetching, setIsFetching] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
-  // Previene doppio fetch in StrictMode per la stessa apertura
   const didFetchOnOpenRef = useRef(false);
 
   const log = (...args: unknown[]) => console.log("[AddExerciseModal]", ...args);
 
-  // Carica esercizi autenticato quando la modale si apre
   useEffect(() => {
     if (!isOpen) {
-      // reset guard alla chiusura
       didFetchOnOpenRef.current = false;
       return;
     }
@@ -110,7 +105,6 @@ const AddExerciseModal = ({ isOpen, onClose, onAddExercise }: AddExerciseModalPr
     return () => controller.abort();
   }, [isOpen]);
 
-  // Filtro locale
   useEffect(() => {
     if (searchQuery.trim() === "") {
       setFilteredExercises([]);
@@ -123,7 +117,6 @@ const AddExerciseModal = ({ isOpen, onClose, onAddExercise }: AddExerciseModalPr
     setFilteredExercises(filtered);
   }, [searchQuery, allExercises]);
 
-  // Click fuori per chiudere il dropdown
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (!showExerciseDropdown) return;
@@ -174,7 +167,6 @@ const AddExerciseModal = ({ isOpen, onClose, onAddExercise }: AddExerciseModalPr
       <div className="bg-white rounded shadow-lg p-4 md:p-6 max-w-md w-full">
         <h3 className="text-lg font-bold mb-4">Aggiungi esercizio</h3>
 
-        {/* Stato caricamento/errore autenticazione */}
         {isFetching && <div className="text-sm text-gray-600 mb-2">Caricamento esercizi...</div>}
         {fetchError && <div className="text-sm text-red-600 mb-2">{fetchError}</div>}
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useUser } from "@clerk/clerk-react";
-import { useApi } from "../lib/utils"; // Importa il wrapper API
+import { useApi } from "../lib/utils"; 
 import Sidebar from "../components/Sidebar";
 import SheetCard from "../components/sheetCard";
 import { Link } from "react-router-dom";
@@ -44,20 +44,18 @@ export default function ExercisesSheets() {
   const [availableExercises, setAvailableExercises] = useState<Exercise[]>([]);
   const [selectedExercises, setSelectedExercises] = useState<ExerciseItem[]>([]);
   
-  // Stati per la ricerca esercizi
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredExercises, setFilteredExercises] = useState<Exercise[]>([]);
   const [showExerciseDropdown, setShowExerciseDropdown] = useState(false);
   const [currentExercise, setCurrentExercise] = useState<Exercise | null>(null);
   
-  // Stati per i dettagli dell'esercizio
   const [currentSerie, setCurrentSerie] = useState<number>(3);
   const [currentReps, setCurrentReps] = useState<number>(10);
   const [currentWeight, setCurrentWeight] = useState<number | undefined>(undefined);
   const [currentNotes, setCurrentNotes] = useState<string>("");
 
   const { user, isLoaded, isSignedIn } = useUser();
-  const api = useApi(); // Usa il wrapper API per gestire l'autenticazione
+  const api = useApi(); 
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn || !user?.id) return;
@@ -65,7 +63,6 @@ export default function ExercisesSheets() {
     const fetchSheets = async () => {
       try {
         setLoading(true);
-        // Usa il wrapper API che gestisce l'autenticazione
         const controller = new AbortController();
         const data = await api.get<Sheet[]>(`/api/sheet/user/${user.id}`, { signal: controller.signal });
         setSheets(data);
@@ -85,7 +82,6 @@ export default function ExercisesSheets() {
     
     const fetchExercises = async () => {
       try {
-        // Usa il wrapper API che gestisce l'autenticazione
         const controller = new AbortController();
         const data = await api.get<Exercise[]>('/api/exercises', { signal: controller.signal });
         setAvailableExercises(data);
@@ -118,7 +114,6 @@ export default function ExercisesSheets() {
     
     setCreating(true);
     try {
-      // Usa il wrapper API che gestisce l'autenticazione
       const data = await api.post<Sheet, {
         name: string;
         userID: string;
@@ -183,7 +178,6 @@ export default function ExercisesSheets() {
     if (!sheetToDelete || !isSignedIn) return;
     
     try {
-      // Usa il wrapper API che gestisce l'autenticazione
       await api.delete(`/api/sheet/${sheetToDelete._id}`);
       setSheets(prev => prev.filter(s => s._id !== sheetToDelete._id));
       setShowDeleteModal(false);

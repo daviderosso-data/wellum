@@ -18,23 +18,22 @@ export function useApi() {
   
   const API_URL = import.meta.env.VITE_URL_SERVER || 'http://localhost:3000';
   
-  // Metodo interno per ottenere il token
   const getToken = async () => {
     return await clerkGetToken();
   };
   
   return {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    
     async get<T = unknown>(endpoint: string, p0: { signal: AbortSignal; }): Promise<T> {
       try {
-        // Ottieni il token da Clerk
         const token = await getToken();
         
         const response = await fetch(`${API_URL}${endpoint}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
-          }
+          },
+          signal: p0.signal
         });
         
         if (!response.ok) {
@@ -115,12 +114,10 @@ export function useApi() {
       }
     },
     
-    // Metodo per ottenere il token di autenticazione
     getToken: async () => {
       return await clerkGetToken();
     },
     
-    // Metodo per ottenere l'URL base dell'API
     getBaseUrl: () => API_URL
   };
 }

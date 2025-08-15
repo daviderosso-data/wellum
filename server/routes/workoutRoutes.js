@@ -9,7 +9,6 @@ const authenticate = requireAuth({
     res.status(401).json({ error: 'Autenticazione richiesta' });
   }
 });
-// Applica entrambi i middleware per una maggiore sicurezza
 
 // Crea un nuovo workout ()
 router.post('/', authenticate, workoutController.createWorkout);

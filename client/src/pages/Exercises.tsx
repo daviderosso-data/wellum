@@ -29,14 +29,12 @@ export default function Exercises() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const api = useApi(); // Usa il wrapper API che gestisce l'autenticazione
+  const api = useApi(); 
   const { isLoaded, isSignedIn } = useUser();
 
   useEffect(() => {
-    // Aspetta che l'utente sia caricato prima di effettuare la richiesta
     if (!isLoaded) return;
     
-    // Se l'utente non è autenticato, imposta un errore
     if (!isSignedIn) {
       setLoading(false);
       setError("Devi accedere per visualizzare gli esercizi");
@@ -46,7 +44,6 @@ export default function Exercises() {
     const fetchExercises = async () => {
       try {
         setLoading(true);
-        // Usa il wrapper API che aggiunge automaticamente il token di autenticazione
         const controller = new AbortController();
         const data = await api.get('/api/exercises', { signal: controller.signal });
         console.log("Esercizi caricati:", data);

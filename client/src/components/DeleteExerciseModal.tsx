@@ -6,8 +6,8 @@
 // The component uses React hooks for state management and side effects, and fetches data from an API endpoint.
 
 import { useState } from 'react';
-import { useApi } from '../lib/utils'; // Importa il wrapper API
-import { useUser } from '@clerk/clerk-react'; // Per verificare l'autenticazione
+import { useApi } from '../lib/utils'; 
+import { useUser } from '@clerk/clerk-react'; 
 
 const DELETE_CODE = import.meta.env.VITE_DELETE_CODE;
 
@@ -23,7 +23,7 @@ const DeleteExerciseModal = ({ exerciseId, onClose, onDeleted }: DeleteExerciseM
   const [deleteSuccess, setDeleteSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
-  const api = useApi(); // Usa il wrapper API che gestisce l'autenticazione
+  const api = useApi(); 
   const { isSignedIn } = useUser();
 
   const handleDelete = async () => {
@@ -39,7 +39,6 @@ const DeleteExerciseModal = ({ exerciseId, onClose, onDeleted }: DeleteExerciseM
     
     try {
       setIsLoading(true);
-      // Usa il wrapper API invece di fetch diretto
       await api.delete(`/api/exercises/${exerciseId}`);
       
       setDeleteError("");

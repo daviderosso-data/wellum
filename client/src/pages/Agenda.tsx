@@ -16,7 +16,7 @@ type Workout = {
   _id: string;
   userId: string;
   sheetId: string;
-  completedAt: string; // ISO string
+  completedAt: string;
   totalSeconds: number;
   exercises: Exercise[];
 };
@@ -37,25 +37,21 @@ export default function AgendaPage() {
   const { user, isSignedIn, isLoaded } = useUser();
   const api = useApi();
 
-  // Stato dati
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [sheets, setSheets] = useState<Sheet[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // UI
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const today = new Date();
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
 
-  // Stato interazioni giorno/modali
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [workoutToDelete, setWorkoutToDelete] = useState<string | null>(null);
   const [deleteSuccess, setDeleteSuccess] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Refs
   const isMounted = useRef(true);
   const apiRef = useRef(api);
   const controllerRef = useRef<AbortController | null>(null);
@@ -63,7 +59,6 @@ export default function AgendaPage() {
   const log = (...args: unknown[]) => console.log('[Agenda]', ...args);
 
   useEffect(() => {
-    // FIX: assicurarsi che sia true al mount successivo (StrictMode)
     isMounted.current = true;
     log('mount -> isLoaded:', isLoaded, 'isSignedIn:', isSignedIn, 'userId:', user?.id);
     return () => {
@@ -71,7 +66,6 @@ export default function AgendaPage() {
       isMounted.current = false;
       controllerRef.current?.abort('component unmounted');
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -79,7 +73,6 @@ export default function AgendaPage() {
     log('useApi updated/refreshed');
   }, [api]);
 
-  // Caricamento dati
   const fetchData = async () => {
     log('fetchData called. isLoaded:', isLoaded, 'isSignedIn:', isSignedIn, 'userId:', user?.id);
 
@@ -147,14 +140,12 @@ export default function AgendaPage() {
       } else {
         log('fetch end -> skipped setState (unmounted)');
       }
-      // clear controller se è quello corrente
       if (controllerRef.current === controller) {
         controllerRef.current = null;
       }
     }
   };
 
-  // Effetto iniziale
   useEffect(() => {
     log('effect -> deps changed: isLoaded:', isLoaded, 'isSignedIn:', isSignedIn, 'userId:', user?.id);
     if (!isLoaded) return;
@@ -164,24 +155,19 @@ export default function AgendaPage() {
       return;
     }
     fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoaded, isSignedIn, user?.id]);
 
-  // Mappa nomi schede
   const sheetNameMap: Record<string, string> = {};
   sheets.forEach(s => { sheetNameMap[s._id] = s.name; });
 
-  // Aggregazione workout per giorno
   const workoutsByDay: Record<string, Workout[]> = {};
   workouts.forEach(w => {
     const day = new Date(w.completedAt).toISOString().slice(0, 10);
     (workoutsByDay[day] ||= []).push(w);
   });
 
-  // Workout del giorno selezionato
   const selectedWorkouts = selectedDay ? (workoutsByDay[selectedDay] || []) : [];
 
-  // Calcolo giorni calendario
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
   const firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay();
   const calendarDays: (string | null)[] = [];
@@ -191,7 +177,6 @@ export default function AgendaPage() {
     calendarDays.push(dateStr);
   }
 
-  // Navigazione calendario
   const prevMonth = () => {
     log('prevMonth');
     setError(null);
@@ -214,7 +199,6 @@ export default function AgendaPage() {
     }
   };
 
-  // Elimina workout
   const handleDeleteWorkout = async (workoutId: string) => {
     log('delete -> start', workoutId);
     try {
@@ -226,15 +210,13 @@ export default function AgendaPage() {
       setDeleteSuccess(true);
       log('delete -> success', workoutId);
 
-      // Feedback e chiusura dialog conferma
       setTimeout(() => {
         if (!isMounted.current) return;
         setWorkoutToDelete(null);
         setDeleteSuccess(false);
 
-        // Se il giorno selezionato non ha più workout, chiudi il modal dettagli
         if (selectedDay) {
-          const remaining = (workoutsByDay[selectedDay]?.length || 0) - 1; // quello appena eliminato
+          const remaining = (workoutsByDay[selectedDay]?.length || 0) - 1; 
           if (remaining <= 0) setSelectedDay(null);
         }
       }, 1200);
@@ -246,7 +228,6 @@ export default function AgendaPage() {
     }
   };
 
-  // Rendering condizionale per auth
   if (isLoaded && !isSignedIn) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-600 p-4">

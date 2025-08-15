@@ -45,12 +45,10 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Usa il wrapper API e il hook di autenticazione
   const api = useApi();
   const { isSignedIn, isLoaded } = useUser();
 
   useEffect(() => {
-    // Non procedere se l'utente non è autenticato
     if (!isLoaded || !isSignedIn) return;
     
     async function fetchDetails() {
@@ -61,7 +59,6 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
         await Promise.all(
           sheet.exercises.map(async (ex) => {
             try {
-              // Usa il wrapper API per ottenere i dettagli dell'esercizio
               const data = await api.get<ExerciseDetails>(`/api/exercises/${ex.exerciseId}`, { signal: controller.signal });
               details[ex.exerciseId] = data;
             } catch (err) {
@@ -80,7 +77,6 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
   }, [sheet.exercises, isSignedIn, isLoaded]);
 
   const handleAddExercise = async (newExercise: ExerciseItem) => {
-    // Verifica che l'utente sia autenticato
     if (!isSignedIn) {
       setError("Devi essere autenticato per aggiungere un esercizio");
       return;
@@ -90,7 +86,6 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
       setIsLoading(true);
       setError(null);
       
-      // Usa il wrapper API per aggiornare la scheda
       await api.put<Sheet, Partial<Sheet>>(`/api/sheet/${sheet._id}`, {
         exercises: [...sheet.exercises, newExercise],
       });
@@ -119,7 +114,6 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
   };
   
   const handleSaveAll = async () => {
-    // Verifica che l'utente sia autenticato
     if (!isSignedIn) {
       setError("Devi essere autenticato per salvare le modifiche");
       return;
@@ -129,7 +123,6 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
       setIsLoading(true);
       setError(null);
       
-      // Usa il wrapper API per aggiornare la scheda
       await api.put<Sheet, Partial<Sheet>>(`/api/sheet/${sheet._id}`, {
         exercises: editExercises
       });
@@ -154,7 +147,6 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
     setEditExercises(prev => prev.filter((_, i) => i !== idx));
   };
   
-  // Mostra messaggio se l'utente non è autenticato
   if (isLoaded && !isSignedIn) {
     return (
       <div className="bg-zinc-300 rounded shadow p-4">
