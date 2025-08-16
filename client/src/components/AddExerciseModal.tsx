@@ -1,13 +1,8 @@
-// Modal to add an exercise to a workout sheet
-// This component allows users to search and select exercises, specify sets, reps, weight, and notes,
-// and submit the exercise to be added to a workout sheet.
-// It includes a search feature to filter exercises by name or muscle group, and displays a dropdown
-// with matching exercises. The form is reset after submission.
-// The component uses React hooks for state management and side effects, and fetches exercise data from
-// an API endpoint.
-
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useApi } from "../lib/utils";
+import { useForm, SubmitHandler } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 type ExerciseDetails = {
   _id: string;
@@ -31,77 +26,71 @@ type AddExerciseModalProps = {
   onAddExercise: (exercise: ExerciseItem) => Promise<void>;
 };
 
-const AddExerciseModal = ({ isOpen, onClose, onAddExercise }: AddExerciseModalProps) => {
-  const api = useApi();
+const formSchema = z.object({
+  exerciseId: z.string().min(1, "Seleziona un esercizio"),
+  serie: z.number().int().min(1, "Minimo 1").max(10, "Max 10"),
+  repetitions: z.number().int().min(1, "Minimo 1").max(100, "Max 100"),
+  weight: z.number().nonnegative("Deve essere >= 0").max(200, "Non esagerare dai").optional(),
+  notes: z.string().max(500, "Max 500 caratteri").optional(),
+});
 
+type FormInputs = z.infer<typeof formSchema>;
+
+export default function AddExerciseModal({ isOpen, onClose, onAddExercise }: AddExerciseModalProps) {
+  const api = useApi();
   const apiRef = useRef(api);
   useEffect(() => {
     apiRef.current = api;
   }, [api]);
 
-  const [allExercises, setAllExercises] = useState<ExerciseDetails[]>([]);
-  const [selectedExercise, setSelectedExercise] = useState("");
-  const [serie, setSerie] = useState<number>(3);
-  const [repetitions, setRepetitions] = useState<number>(10);
-  const [weight, setWeight] = useState<number>(0);
-  const [notes, setNotes] = useState("");
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    reset,
+    formState: { errors, isValid, isSubmitting },
+  } = useForm<FormInputs>({
+    resolver: zodResolver(formSchema),
+    defaultValues: { exerciseId: "", serie: 3, repetitions: 4, weight: undefined, notes: "" },
+    mode: "onChange",
+  });
 
+  const [allExercises, setAllExercises] = useState<ExerciseDetails[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredExercises, setFilteredExercises] = useState<ExerciseDetails[]>([]);
   const [showExerciseDropdown, setShowExerciseDropdown] = useState(false);
-
   const [isFetching, setIsFetching] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
-
   const didFetchOnOpenRef = useRef(false);
-
-  const log = (...args: unknown[]) => console.log("[AddExerciseModal]", ...args);
 
   useEffect(() => {
     if (!isOpen) {
       didFetchOnOpenRef.current = false;
       return;
     }
-
-    if (didFetchOnOpenRef.current) {
-      log("skip fetch: already fetched since open");
-      return;
-    }
+    if (didFetchOnOpenRef.current) return;
     didFetchOnOpenRef.current = true;
 
     const controller = new AbortController();
-
-    const run = async () => {
+    (async () => {
       setIsFetching(true);
       setFetchError(null);
       try {
-        log("GET /api/exercises -> start");
         const data = await apiRef.current.get<ExerciseDetails[]>("/api/exercises", { signal: controller.signal });
-        log("GET /api/exercises -> ok:", Array.isArray(data) ? data.length : "non-array");
         setAllExercises(Array.isArray(data) ? data : []);
       } catch (err: unknown) {
-        if (typeof err === "object" && err !== null && "name" in err && (err as { name?: string }).name === "AbortError") {
-          log("GET /api/exercises -> aborted");
-          return;
-        }
         const status =
           typeof err === "object" && err !== null
             ? ((err as { status?: number; response?: { status?: number } }).status ||
               (err as { response?: { status?: number } }).response?.status)
             : undefined;
-        log("GET /api/exercises -> error:", status, err);
-        if (status === 401 || status === 403) {
-          setFetchError("Non autenticato. Accedi per cercare esercizi.");
-        } else {
-          setFetchError("Errore nel caricamento degli esercizi. Riprova.");
-        }
+        setFetchError(status === 401 || status === 403 ? "Non autenticato. Accedi per cercare esercizi." : "Errore nel caricamento degli esercizi. Riprova.");
         setAllExercises([]);
       } finally {
         setIsFetching(false);
       }
-    };
+    })();
 
-    run();
     return () => controller.abort();
   }, [isOpen]);
 
@@ -121,43 +110,28 @@ const AddExerciseModal = ({ isOpen, onClose, onAddExercise }: AddExerciseModalPr
     const handleClickOutside = (e: MouseEvent) => {
       if (!showExerciseDropdown) return;
       const target = e.target as HTMLElement;
-      if (!target.closest(".search-container")) {
-        setShowExerciseDropdown(false);
-      }
+      if (!target.closest(".search-container")) setShowExerciseDropdown(false);
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showExerciseDropdown]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedExercise) return;
-
-    const newExercise: ExerciseItem = {
-      exerciseId: selectedExercise,
-      serie,
-      repetitions,
-      weight,
-      notes,
-    };
-
-    await onAddExercise(newExercise);
-    resetForm();
+  const onSubmit: SubmitHandler<FormInputs> = async (data) => {
+    await onAddExercise({
+      exerciseId: data.exerciseId,
+      serie: data.serie,
+      repetitions: data.repetitions,
+      weight: data.weight,
+      notes: data.notes,
+    });
+    reset({ exerciseId: "", serie: 3, repetitions: 10, weight: undefined, notes: "" });
+    setSearchQuery("");
   };
 
   const selectExercise = (exercise: ExerciseDetails) => {
-    setSelectedExercise(exercise._id);
+    setValue("exerciseId", exercise._id, { shouldValidate: true, shouldDirty: true });
     setSearchQuery(exercise.name);
     setShowExerciseDropdown(false);
-  };
-
-  const resetForm = () => {
-    setSelectedExercise("");
-    setSearchQuery("");
-    setSerie(3);
-    setRepetitions(10);
-    setWeight(0);
-    setNotes("");
   };
 
   if (!isOpen) return null;
@@ -167,10 +141,18 @@ const AddExerciseModal = ({ isOpen, onClose, onAddExercise }: AddExerciseModalPr
       <div className="bg-white rounded shadow-lg p-4 md:p-6 max-w-md w-full">
         <h3 className="text-lg font-bold mb-4">Aggiungi esercizio</h3>
 
-        {isFetching && <div className="text-sm text-gray-600 mb-2">Caricamento esercizi...</div>}
+        {isFetching && (
+          <div className="min-h-[32px] flex items-center gap-2 text-gray-600 mb-2">
+            <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-amber-500"></span>
+            <span className="text-sm">Caricamento esercizi...</span>
+          </div>
+        )}
         {fetchError && <div className="text-sm text-red-600 mb-2">{fetchError}</div>}
 
-        <form onSubmit={handleSubmit} className="space-y-3">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
+          <input type="hidden" {...register("exerciseId")} />
+          {errors.exerciseId && <p className="text-xs text-red-600">{errors.exerciseId.message}</p>}
+
           <div className="relative search-container">
             <span className="font-semibold">Esercizio:</span>
             <input
@@ -181,13 +163,12 @@ const AddExerciseModal = ({ isOpen, onClose, onAddExercise }: AddExerciseModalPr
               onChange={(e) => {
                 setSearchQuery(e.target.value);
                 setShowExerciseDropdown(true);
-                setSelectedExercise("");
+                setValue("exerciseId", "", { shouldValidate: true, shouldDirty: true });
               }}
               onFocus={() => setShowExerciseDropdown(true)}
               required
               disabled={!!fetchError}
             />
-
             {showExerciseDropdown && filteredExercises.length > 0 && (
               <div className="absolute z-10 mt-1 w-full bg-white rounded-md shadow-lg max-h-48 overflow-auto">
                 <ul className="py-1">
@@ -214,48 +195,39 @@ const AddExerciseModal = ({ isOpen, onClose, onAddExercise }: AddExerciseModalPr
           <div>
             <span className="font-semibold text-sm">Serie:</span>
             <input
-              type="text"
+              type="number"
               inputMode="numeric"
               className="w-full p-2 border rounded bg-gray-100 appearance-none"
               placeholder="Serie"
-              value={serie}
-              onChange={(e) => {
-                const value = e.target.value;
-                if (/^\d*$/.test(value)) setSerie(value ? parseInt(value) : 0);
-              }}
-              required
+              {...register("serie", { valueAsNumber: true })}
             />
+            {errors.serie && <p className="text-xs text-red-600">{errors.serie.message}</p>}
           </div>
 
           <div>
             <span className="font-semibold text-sm">Ripetizioni:</span>
             <input
-              type="text"
+              type="number"
               inputMode="numeric"
               className="w-full p-2 border rounded bg-gray-100 appearance-none"
               placeholder="Ripetizioni"
-              value={repetitions}
-              onChange={(e) => {
-                const value = e.target.value;
-                if (/^\d*$/.test(value)) setRepetitions(value ? parseInt(value) : 0);
-              }}
-              required
+              {...register("repetitions", { valueAsNumber: true })}
             />
+            {errors.repetitions && <p className="text-xs text-red-600">{errors.repetitions.message}</p>}
           </div>
 
           <div>
             <span className="font-semibold text-sm">Peso (kg):</span>
             <input
-              type="text"
+              type="number"
               inputMode="decimal"
               className="w-full p-2 border rounded bg-gray-100 appearance-none"
               placeholder="Peso (kg)"
-              value={weight}
-              onChange={(e) => {
-                const value = e.target.value;
-                if (/^\d*\.?\d*$/.test(value)) setWeight(value ? parseFloat(value) : 0);
-              }}
+              {...register("weight", {
+                setValueAs: (v) => (v === "" || v === null ? undefined : Number(v)),
+              })}
             />
+            {errors.weight && <p className="text-xs text-red-600">{errors.weight.message}</p>}
           </div>
 
           <div>
@@ -264,19 +236,24 @@ const AddExerciseModal = ({ isOpen, onClose, onAddExercise }: AddExerciseModalPr
               type="text"
               className="w-full p-2 border rounded bg-gray-100"
               placeholder="Note"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              {...register("notes")}
             />
+            {errors.notes && <p className="text-xs text-red-600">{errors.notes.message}</p>}
           </div>
 
           <div className="flex justify-end gap-2">
-            <button type="button" className="px-3 py-1.5 bg-gray-400 rounded hover:bg-gray-500 text-sm" onClick={onClose}>
+            <button
+              type="button"
+              className="px-3 py-1.5 bg-gray-400 rounded hover:bg-gray-500 text-sm"
+              onClick={onClose}
+              disabled={isSubmitting}
+            >
               Annulla
             </button>
             <button
               type="submit"
               className="px-3 py-1.5 bg-amber-500 text-zinc-900 rounded hover:bg-amber-600 text-sm"
-              disabled={!selectedExercise || !!fetchError}
+              disabled={!isValid || !!fetchError || isSubmitting}
             >
               Aggiungi
             </button>
@@ -285,6 +262,4 @@ const AddExerciseModal = ({ isOpen, onClose, onAddExercise }: AddExerciseModalPr
       </div>
     </div>
   );
-};
-
-export default AddExerciseModal;
+}
