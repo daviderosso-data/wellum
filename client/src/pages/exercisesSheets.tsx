@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
 import { useUser } from "@clerk/clerk-react";
-import { useApi } from "../lib/utils"; 
+import { useApi } from "../lib/utils";
 import Sidebar from "../components/Sidebar";
 import SheetCard from "../components/sheetCard";
 import { Link } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 type Exercise = {
   _id: string;
@@ -30,42 +33,50 @@ type Sheet = {
   createdAt: string;
 };
 
+const exerciseEntrySchema = z.object({
+  exerciseId: z.string().min(1, "Seleziona un esercizio"),
+  serie: z.number().int().min(1, "Min 1").max(100, "Max 100"),
+  repetitions: z.number().int().min(1, "Min 1").max(1000, "Max 1000"),
+  weight: z.number().nonnegative(">= 0").optional(),
+  notes: z.string().max(300, "Max 300 caratteri").optional(),
+});
+
+const sheetFormSchema = z.object({
+  name: z.string().min(1, "Nome richiesto"),
+}).and(exerciseEntrySchema.partial());
+
+type SheetFormInputs = z.infer<typeof sheetFormSchema>;
+
 export default function ExercisesSheets() {
   const [sheets, setSheets] = useState<Sheet[]>([]);
   const [loading, setLoading] = useState(true);
+
   const [showModal, setShowModal] = useState(false);
-  const [newSheetName, setNewSheetName] = useState("");
   const [creating, setCreating] = useState(false);
   const [createdSheet, setCreatedSheet] = useState<Sheet | null>(null);
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [sheetToDelete, setSheetToDelete] = useState<Sheet | null>(null);
-  
+
   const [availableExercises, setAvailableExercises] = useState<Exercise[]>([]);
   const [selectedExercises, setSelectedExercises] = useState<ExerciseItem[]>([]);
-  
+
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredExercises, setFilteredExercises] = useState<Exercise[]>([]);
   const [showExerciseDropdown, setShowExerciseDropdown] = useState(false);
   const [currentExercise, setCurrentExercise] = useState<Exercise | null>(null);
-  
-  const [currentSerie, setCurrentSerie] = useState<number>(3);
-  const [currentReps, setCurrentReps] = useState<number>(10);
-  const [currentWeight, setCurrentWeight] = useState<number | undefined>(undefined);
-  const [currentNotes, setCurrentNotes] = useState<string>("");
 
   const { user, isLoaded, isSignedIn } = useUser();
-  const api = useApi(); 
+  const api = useApi();
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn || !user?.id) return;
-    
     const fetchSheets = async () => {
       try {
         setLoading(true);
         const controller = new AbortController();
         const data = await api.get<Sheet[]>(`/api/sheet/user/${user.id}`, { signal: controller.signal });
-        setSheets(data);
+        setSheets(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error("Errore caricamento schede:", error);
         setSheets([]);
@@ -73,100 +84,116 @@ export default function ExercisesSheets() {
         setLoading(false);
       }
     };
-    
     fetchSheets();
   }, [user?.id, isLoaded, isSignedIn]);
-  
+
   useEffect(() => {
     if (!showModal || !isSignedIn) return;
-    
     const fetchExercises = async () => {
       try {
         const controller = new AbortController();
-        const data = await api.get<Exercise[]>('/api/exercises', { signal: controller.signal });
-        setAvailableExercises(data);
+        const data = await api.get<Exercise[]>("/api/exercises", { signal: controller.signal });
+        setAvailableExercises(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error("Errore caricamento esercizi:", error);
       }
     };
-    
     fetchExercises();
   }, [showModal, isSignedIn]);
-  
+
   useEffect(() => {
     if (searchQuery.trim() === "") {
       setFilteredExercises([]);
       return;
     }
-    
     const query = searchQuery.toLowerCase();
-    const filtered = availableExercises.filter(ex => 
-      ex.name.toLowerCase().includes(query) || 
-      ex.group.toLowerCase().includes(query)
+    const filtered = availableExercises.filter(
+      (ex) => ex.name.toLowerCase().includes(query) || ex.group.toLowerCase().includes(query)
     );
-    
     setFilteredExercises(filtered);
   }, [searchQuery, availableExercises]);
 
-  const handleCreateSheet = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newSheetName.trim() || !user?.id || !isSignedIn) return;
-    
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    getValues,
+    trigger,
+    reset,
+    formState: { errors, isSubmitting, isValid },
+  } = useForm<SheetFormInputs>({
+    resolver: zodResolver(sheetFormSchema),
+    defaultValues: {
+      name: "",
+      exerciseId: "",
+      serie: 3,
+      repetitions: 10,
+      weight: undefined,
+      notes: "",
+    },
+    mode: "onChange",
+  });
+
+  const addCurrentExercise = async () => {
+    const ok = await trigger(["exerciseId", "serie", "repetitions", "weight", "notes"]);
+    if (!ok || !currentExercise) return;
+    const { exerciseId, serie, repetitions, weight, notes } = getValues();
+
+    // Ensure required fields are defined to satisfy ExerciseItem type
+    if (!exerciseId || serie === undefined || repetitions === undefined) return;
+
+    setSelectedExercises((prev) => [
+      ...prev,
+      { exerciseId, exerciseName: currentExercise.name, serie, repetitions, weight, notes },
+    ]);
+    setValue("exerciseId", "", { shouldValidate: true, shouldDirty: true });
+    setValue("serie", 3);
+    setValue("repetitions", 10);
+    setValue("weight", undefined);
+    setValue("notes", "");
+    setCurrentExercise(null);
+    setSearchQuery("");
+  };
+
+  const handleCreateSheet = async (values: SheetFormInputs) => {
+    if (!user?.id || !isSignedIn || selectedExercises.length === 0) return;
     setCreating(true);
     try {
-      const data = await api.post<Sheet, {
-        name: string;
-        userID: string;
-        exercises: Omit<ExerciseItem, 'exerciseName'>[];
-      }>('/api/sheet', {
-        name: newSheetName,
+      const data = await api.post<
+        Sheet,
+        {
+          name: string;
+          userID: string;
+          exercises: Omit<ExerciseItem, "exerciseName">[];
+        }
+      >("/api/sheet", {
+        name: values.name,
         userID: user.id,
-        exercises: selectedExercises.map(ex => ({
+        exercises: selectedExercises.map((ex) => ({
           exerciseId: ex.exerciseId,
           serie: ex.serie,
           repetitions: ex.repetitions,
           weight: ex.weight,
-          notes: ex.notes
+          notes: ex.notes,
         })),
       });
-      
       setCreatedSheet(data);
-      setSheets(prev => [data, ...prev]);
+      setSheets((prev) => [data, ...prev]);
       setShowModal(false);
-      setNewSheetName("");
+      reset({ name: "", exerciseId: "", serie: 3, repetitions: 10, weight: undefined, notes: "" });
       setSelectedExercises([]);
+      setSearchQuery("");
+      setCurrentExercise(null);
     } catch (error) {
       console.error("Error creating sheet:", error);
+      alert("Errore durante la creazione della scheda.");
     } finally {
       setCreating(false);
     }
   };
 
-  const handleAddExercise = () => {
-    if (!currentExercise) return;
-    
-    setSelectedExercises(prev => [
-      ...prev, 
-      {
-        exerciseId: currentExercise._id,
-        exerciseName: currentExercise.name,
-        serie: currentSerie,
-        repetitions: currentReps,
-        weight: currentWeight,
-        notes: currentNotes
-      }
-    ]);
-    
-    setCurrentExercise(null);
-    setSearchQuery("");
-    setCurrentSerie(3);
-    setCurrentReps(10);
-    setCurrentWeight(undefined);
-    setCurrentNotes("");
-  };
-
   const handleRemoveExercise = (index: number) => {
-    setSelectedExercises(prev => prev.filter((_, i) => i !== index));
+    setSelectedExercises((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleDeleteRequest = (sheet: Sheet) => {
@@ -176,10 +203,9 @@ export default function ExercisesSheets() {
 
   const handleDeleteSheet = async () => {
     if (!sheetToDelete || !isSignedIn) return;
-    
     try {
       await api.delete(`/api/sheet/${sheetToDelete._id}`);
-      setSheets(prev => prev.filter(s => s._id !== sheetToDelete._id));
+      setSheets((prev) => prev.filter((s) => s._id !== sheetToDelete._id));
       setShowDeleteModal(false);
       setSheetToDelete(null);
     } catch (error) {
@@ -191,6 +217,7 @@ export default function ExercisesSheets() {
   const selectExercise = (exercise: Exercise) => {
     setCurrentExercise(exercise);
     setSearchQuery(exercise.name);
+    setValue("exerciseId", exercise._id, { shouldValidate: true, shouldDirty: true });
     setShowExerciseDropdown(false);
   };
 
@@ -199,13 +226,12 @@ export default function ExercisesSheets() {
       <div className="fixed top-0 left-0 h-screen w-64 z-10 hidden md:block">
         <Sidebar />
       </div>
-      
+
       <div className="fixed top-0 left-0 right-0 bg-zinc-800 p-3 flex items-center z-20 md:hidden">
         <Sidebar />
         <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
         </svg>
-        
         <Link to="/" className="flex items-center">
           <img src="/assets/pictures/logoAmberTransp.png" className="ml-6 h-8" alt="Wellum logo" />
         </Link>
@@ -222,7 +248,7 @@ export default function ExercisesSheets() {
             + Crea una nuova scheda
           </button>
         </div>
-        
+
         {!isSignedIn && isLoaded ? (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
             Devi effettuare l'accesso per visualizzare le tue schede.
@@ -238,11 +264,7 @@ export default function ExercisesSheets() {
           </div>
         ) : sheets.length === 0 ? (
           <div className="flex flex-col items-center justify-center bg-zinc-200 rounded-xl p-8 mt-6 text-center">
-            <img
-              src="/assets/pictures/brain-run.png"
-              alt="Nessuna scheda"
-              className="w-56 h-56 object-contain mb-4 opacity-90"
-            />
+            <img src="/assets/pictures/brain-run.png" alt="Nessuna scheda" className="w-56 h-56 object-contain mb-4 opacity-90" />
             <h2 className="text-xl font-semibold text-zinc-900 mb-2">Non hai ancora creato una scheda</h2>
             <p className="text-zinc-700 mb-4">Crea la tua prima scheda di allenamento per iniziare.</p>
             <button
@@ -254,12 +276,8 @@ export default function ExercisesSheets() {
           </div>
         ) : (
           <div className="space-y-4">
-            {sheets.map(sheet => (
-              <SheetCard
-                key={sheet._id}
-                sheet={sheet}
-                onDeleteRequest={() => handleDeleteRequest(sheet)}
-              />
+            {sheets.map((sheet) => (
+              <SheetCard key={sheet._id} sheet={sheet} onDeleteRequest={() => handleDeleteRequest(sheet)} />
             ))}
           </div>
         )}
@@ -267,51 +285,59 @@ export default function ExercisesSheets() {
 
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-zinc-400 rounded shadow-lg p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+          <div className="relative bg-zinc-400 rounded shadow-lg p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+            {creating && (
+              <div className="absolute inset-0 z-10">
+                <div className="min-h-screen flex items-center justify-center bg-zinc-600/70 p-4">
+                  <span className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></span>
+                </div>
+              </div>
+            )}
+
             <h2 className="text-xl font-bold mb-4">Crea una nuova scheda</h2>
-            <form onSubmit={handleCreateSheet} className="space-y-4">
+            <form onSubmit={handleSubmit(handleCreateSheet)} className="space-y-4">
               <input
                 type="text"
                 className="w-full p-2 border rounded bg-gray-200"
                 placeholder="Nome scheda"
-                value={newSheetName}
-                onChange={e => setNewSheetName(e.target.value)}
-                required
+                {...register("name")}
+                disabled={creating}
               />
-              
+              {errors.name && <p className="text-sm text-red-600">{errors.name.message}</p>}
+
               <div className="bg-zinc-300 p-4 rounded-lg">
                 <h3 className="font-bold mb-2">Aggiungi esercizi</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="relative">
+                  <div className="relative search-container">
                     <label className="block text-sm font-medium mb-1">Esercizio</label>
                     <input
                       type="text"
                       className="w-full p-2 border rounded bg-gray-100"
                       placeholder="Cerca esercizio..."
                       value={searchQuery}
-                      onChange={e => {
+                      onChange={(e) => {
                         setSearchQuery(e.target.value);
                         setShowExerciseDropdown(true);
                         setCurrentExercise(null);
+                        setValue("exerciseId", "", { shouldValidate: true, shouldDirty: true });
                       }}
                       onFocus={() => setShowExerciseDropdown(true)}
+                      disabled={creating}
                     />
-                    
+                    <input type="hidden" {...register("exerciseId")} />
+                    {errors.exerciseId && <p className="text-xs text-red-600">{errors.exerciseId.message}</p>}
+
                     {showExerciseDropdown && filteredExercises.length > 0 && (
                       <div className="absolute z-10 mt-1 w-full bg-white rounded-md shadow-lg max-h-60 overflow-auto">
                         <ul className="py-1">
-                          {filteredExercises.map(ex => (
-                            <li 
-                              key={ex._id} 
+                          {filteredExercises.map((ex) => (
+                            <li
+                              key={ex._id}
                               className="px-3 py-2 hover:bg-gray-100 cursor-pointer flex items-center"
                               onClick={() => selectExercise(ex)}
                             >
                               {ex.imageUrl && (
-                                <img 
-                                  src={ex.imageUrl} 
-                                  alt={ex.name} 
-                                  className="w-10 h-10 object-cover rounded mr-2" 
-                                />
+                                <img src={ex.imageUrl} alt={ex.name} className="w-10 h-10 object-cover rounded mr-2" />
                               )}
                               <div>
                                 <div className="font-medium">{ex.name}</div>
@@ -323,78 +349,69 @@ export default function ExercisesSheets() {
                       </div>
                     )}
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium mb-1">Serie</label>
                     <input
-                      type="text"
+                      type="number"
                       inputMode="numeric"
                       className="w-full p-2 border rounded bg-gray-100 appearance-none"
-                      value={currentSerie}
-                      onChange={e => {
-                        const value = e.target.value;
-                        if (/^\d*$/.test(value)) {
-                          setCurrentSerie(value ? parseInt(value) : 0);
-                        }
-                      }}
+                      {...register("serie", { valueAsNumber: true })}
+                      disabled={creating}
                     />
+                    {errors.serie && <p className="text-xs text-red-600">{errors.serie.message}</p>}
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium mb-1">Ripetizioni</label>
                     <input
-                      type="text"
+                      type="number"
                       inputMode="numeric"
                       className="w-full p-2 border rounded bg-gray-100 appearance-none"
-                      value={currentReps}
-                      onChange={e => {
-                        const value = e.target.value;
-                        if (/^\d*$/.test(value)) {
-                          setCurrentReps(value ? parseInt(value) : 0);
-                        }
-                      }}
+                      {...register("repetitions", { valueAsNumber: true })}
+                      disabled={creating}
                     />
+                    {errors.repetitions && <p className="text-xs text-red-600">{errors.repetitions.message}</p>}
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium mb-1">Peso (kg, opzionale)</label>
                     <input
-                      type="text"
+                      type="number"
                       inputMode="decimal"
                       className="w-full p-2 border rounded bg-gray-100 appearance-none"
-                      value={currentWeight === undefined ? '' : currentWeight}
-                      onChange={e => {
-                        const value = e.target.value;
-                        if (/^\d*\.?\d*$/.test(value)) {
-                          setCurrentWeight(value ? parseFloat(value) : undefined);
-                        }
-                      }}
                       placeholder="0"
+                      {...register("weight", {
+                        setValueAs: (v) => (v === "" || v === null ? undefined : Number(v)),
+                      })}
+                      disabled={creating}
                     />
+                    {errors.weight && <p className="text-xs text-red-600">{errors.weight.message}</p>}
                   </div>
-                  
+
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium mb-1">Note (opzionale)</label>
                     <input
                       type="text"
                       className="w-full p-2 border rounded bg-gray-100"
-                      value={currentNotes}
-                      onChange={e => setCurrentNotes(e.target.value)}
                       placeholder="Note aggiuntive..."
+                      {...register("notes")}
+                      disabled={creating}
                     />
+                    {errors.notes && <p className="text-xs text-red-600">{errors.notes.message}</p>}
                   </div>
                 </div>
-                
+
                 <button
                   type="button"
-                  className="mt-4 px-4 py-2 bg-amber-500 text-zinc-900 rounded hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-md "
-                  onClick={handleAddExercise}
-                  disabled={!currentExercise}
+                  className="mt-4 px-4 py-2 bg-amber-500 text-zinc-900 rounded hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                  onClick={addCurrentExercise}
+                  disabled={!currentExercise || creating}
                 >
                   Aggiungi all'elenco
                 </button>
               </div>
-              
+
               {selectedExercises.length > 0 && (
                 <div className="bg-zinc-300 p-4 rounded-lg">
                   <h3 className="font-bold mb-2">Esercizi aggiunti ({selectedExercises.length})</h3>
@@ -413,6 +430,7 @@ export default function ExercisesSheets() {
                           type="button"
                           className="text-red-500 hover:text-red-700"
                           onClick={() => handleRemoveExercise(index)}
+                          disabled={creating}
                         >
                           ×
                         </button>
@@ -421,20 +439,20 @@ export default function ExercisesSheets() {
                   </ul>
                 </div>
               )}
-              
+
               <div className="flex justify-end gap-2">
                 <button
                   type="button"
                   className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-500 shadow-md cursor-pointer font-semibold"
                   onClick={() => setShowModal(false)}
-                  disabled={creating}
+                  disabled={creating || isSubmitting}
                 >
                   Annulla
                 </button>
                 <button
                   type="submit"
                   className="px-4 py-2 bg-amber-500 text-zinc-900 rounded hover:bg-amber-600 shadow-md cursor-pointer font-semibold"
-                  disabled={creating || selectedExercises.length === 0}
+                  disabled={creating || isSubmitting || selectedExercises.length === 0 || !isValid}
                 >
                   {creating ? "Creazione..." : "Crea"}
                 </button>
@@ -467,16 +485,10 @@ export default function ExercisesSheets() {
             <h2 className="text-xl font-bold mb-4 text-red-600">Elimina scheda</h2>
             <p>Sei sicuro di voler eliminare la scheda <b>{sheetToDelete.name}</b>?</p>
             <div className="flex justify-end gap-2 mt-6">
-              <button
-                className="px-4 py-2 bg-gray-400 rounded hover:bg-gray-500"
-                onClick={() => setShowDeleteModal(false)}
-              >
+              <button className="px-4 py-2 bg-gray-400 rounded hover:bg-gray-500" onClick={() => setShowDeleteModal(false)}>
                 Annulla
               </button>
-              <button
-                className="px-4 py-2 bg-amber-500 text-zinc-900 rounded hover:bg-amber-600"
-                onClick={handleDeleteSheet}
-              >
+              <button className="px-4 py-2 bg-amber-500 text-zinc-900 rounded hover:bg-amber-600" onClick={handleDeleteSheet}>
                 Elimina
               </button>
             </div>

@@ -5,32 +5,58 @@
 // It also includes a modal for confirming the completion of the workout and saving it to the user's calendar.
 // The workout can be paused, resumed, and navigated through exercises
 
-import { useEffect, useRef, useState } from 'react'
-import WorkoutCompleteModal from './workoutCompleteModal'
-import { useUser } from "@clerk/clerk-react";
+import { useEffect, useRef, useState } from 'react';
+import WorkoutCompleteModal from './workoutCompleteModal';
+import { useUser } from '@clerk/clerk-react';
 import { useApi } from '../lib/utils';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 type Exercise = {
-  exerciseId: string
-  serie: number
-  repetitions: number
-  weight?: number
-  notes?: string
-}
+  exerciseId: string;
+  serie: number;
+  repetitions: number;
+  weight?: number;
+  notes?: string;
+};
 
 type ExerciseData = {
-  name: string
-  description?: string
-  imageUrl?: string
-}
+  name: string;
+  description?: string;
+  imageUrl?: string;
+};
 
-const WeightModal = ({ isOpen, currentWeight, onSave, onClose }: { 
-  isOpen: boolean, 
-  currentWeight: number, 
-  onSave: (weight: number) => void, 
-  onClose: () => void 
+const weightSchema = z.object({
+  weight: z.number().min(0, 'Inserisci un peso >= 0').max(1000, 'Peso troppo alto'),
+});
+type WeightForm = z.infer<typeof weightSchema>;
+
+const WeightModal = ({
+  isOpen,
+  currentWeight,
+  onSave,
+  onClose,
+}: {
+  isOpen: boolean;
+  currentWeight: number;
+  onSave: (weight: number) => void;
+  onClose: () => void;
 }) => {
-  const [weight, setWeight] = useState(currentWeight.toString());
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isValid, isSubmitting },
+  } = useForm<WeightForm>({
+    resolver: zodResolver(weightSchema),
+    defaultValues: { weight: currentWeight },
+    mode: 'onChange',
+  });
+
+  useEffect(() => {
+    if (isOpen) reset({ weight: currentWeight });
+  }, [isOpen, currentWeight, reset]);
 
   if (!isOpen) return null;
 
@@ -39,68 +65,79 @@ const WeightModal = ({ isOpen, currentWeight, onSave, onClose }: {
       <div className="bg-zinc-800 p-6 rounded-lg w-full max-w-md">
         <h3 className="text-xl font-bold text-amber-500 mb-4">Modifica carico</h3>
         <p className="mb-4 text-white">Inserisci il carico per questa ripetizione:</p>
-        
-      <input
-  type="text"
-  inputMode="decimal"
-  value={weight}
-  onChange={(e) => {
-    const value = e.target.value;
-    if (/^\d*\.?\d*$/.test(value)) {
-      setWeight(value);
-    }
-  }}
-  className="w-full p-2 mb-4 bg-zinc-700 text-white border border-zinc-600 rounded appearance-none"
-  placeholder="0.0"
-/>
-        
-        <div className="flex justify-end gap-2">
-          <button 
-            onClick={onClose}
-            className="px-4 py-2 bg-zinc-600 text-white rounded"
-          >
-            Annulla
-          </button>
-          <button 
-            onClick={() => onSave(Number(weight))}
-            className="px-4 py-2 bg-amber-500 text-zinc-900 rounded"
-          >
-            Salva
-          </button>
-        </div>
+
+        <form
+          onSubmit={handleSubmit(({ weight }) => onSave(weight))}
+          className="space-y-4"
+        >
+          <div>
+            <input
+              type="number"
+              step="0.1"
+              inputMode="decimal"
+              className="w-full p-2 bg-zinc-700 text-white border border-zinc-600 rounded appearance-none"
+              placeholder="0.0"
+              {...register('weight', { valueAsNumber: true })}
+            />
+            {errors.weight && (
+              <p className="text-red-400 text-xs mt-1">{errors.weight.message}</p>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 bg-zinc-600 text-white rounded"
+              disabled={isSubmitting}
+            >
+              Annulla
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-amber-500 text-zinc-900 rounded disabled:opacity-60"
+              disabled={!isValid || isSubmitting}
+            >
+              Salva
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
 };
 
 type Props = {
-  sheetId: string
-  restTime: number
-  onFinish?: () => void
-}
+  sheetId: string;
+  restTime: number; // minuti
+  onFinish?: () => void;
+};
 
 const WorkoutRunner = ({ sheetId, restTime }: Props) => {
-  const [totalWorkoutSeconds, setTotalWorkoutSeconds] = useState(0)
-  const [isComplete, setIsComplete] = useState(false)
-  const [exercises, setExercises] = useState<Exercise[]>([])
-  const [exerciseData, setExerciseData] = useState<ExerciseData | null>(null)
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [currentRep, setCurrentRep] = useState(1)
-  const [timer, setTimer] = useState(0)
-  const [isRunning, setIsRunning] = useState(false)
-  const [phase, setPhase] = useState<'idle' | 'workout' | 'rest'>('idle')
+  const [totalWorkoutSeconds, setTotalWorkoutSeconds] = useState(0);
+  const [isComplete, setIsComplete] = useState(false);
+  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [exerciseData, setExerciseData] = useState<ExerciseData | null>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentRep, setCurrentRep] = useState(1);
+  const [timer, setTimer] = useState(0);
+  const [isRunning, setIsRunning] = useState(false);
+  const [phase, setPhase] = useState<'idle' | 'workout' | 'rest'>('idle');
+  const [showWeightModal, setShowWeightModal] = useState(false);
+  const [currentWeight, setCurrentWeight] = useState(0);
+  const [loadingSheet, setLoadingSheet] = useState(true);
+
   const { user } = useUser();
   const api = useApi();
   const apiRef = useRef(api);
-  useEffect(() => { apiRef.current = api; }, [api]);
-  
-  const [showWeightModal, setShowWeightModal] = useState(false);
-  const [currentWeight, setCurrentWeight] = useState(0);
-  
-  const intervalRef = useRef<NodeJS.Timeout | null>(null)
+  useEffect(() => {
+    apiRef.current = api;
+  }, [api]);
 
-  const current = exercises[currentIndex]
-  const totalReps = current?.repetitions || 0
+  const intervalRef = useRef<number | null>(null);
+
+  const current = exercises[currentIndex];
+  const totalReps = current?.repetitions || 0;
 
   const authedFetch = async (path: string, init?: RequestInit) => {
     const token = await apiRef.current.getToken();
@@ -118,159 +155,169 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
   useEffect(() => {
     const controller = new AbortController();
     (async () => {
+      setLoadingSheet(true);
       try {
         const res = await authedFetch(`/api/sheet/${sheetId}`, { signal: controller.signal });
         if (!res.ok) throw new Error(`GET sheet ${res.status}`);
         const data = await res.json();
-        setExercises(data.exercises || []);
-        if (data.exercises && data.exercises.length > 0) {
-          setCurrentWeight(data.exercises[0].weight || 0);
-        }
+        const exs: Exercise[] = Array.isArray(data?.exercises) ? data.exercises : [];
+        setExercises(exs);
+        if (exs.length > 0) setCurrentWeight(exs[0].weight || 0);
       } catch (e) {
-        if (e && typeof e === 'object' && 'name' in e && (e as { name?: string }).name !== 'AbortError') {
+        if (e && typeof e === 'object' && 'name' in e && (e as { name?: string }).name === 'AbortError') {
+          // ignore
+        } else {
           console.error('Errore caricamento scheda:', e);
         }
+      } finally {
+        setLoadingSheet(false);
       }
     })();
     return () => controller.abort();
   }, [sheetId]);
 
   useEffect(() => {
-    const loadExerciseData = async () => {
-      const ex = exercises[currentIndex];
-      if (ex?.exerciseId) {
-        const controller = new AbortController();
-        try {
-          const res = await authedFetch(`/api/exercises/${ex.exerciseId}`, { signal: controller.signal });
-          if (!res.ok) throw new Error(`GET exercise ${res.status}`);
-          const data = await res.json();
-          setExerciseData(data);
-          setCurrentWeight(ex.weight || 0);
-        } catch (e) {
-          if (typeof e === 'object' && e !== null && 'name' in e && (e as { name?: string }).name !== 'AbortError') {
-            console.error('Errore caricamento esercizio:', e);
-            setExerciseData(null);
-          }
+    if (!exercises.length) {
+      setExerciseData(null);
+      return;
+    }
+    const ex = exercises[currentIndex];
+    if (!ex?.exerciseId) {
+      setExerciseData(null);
+      return;
+    }
+    const controller = new AbortController();
+    (async () => {
+      try {
+        const res = await authedFetch(`/api/exercises/${ex.exerciseId}`, { signal: controller.signal });
+        if (!res.ok) throw new Error(`GET exercise ${res.status}`);
+        const data = (await res.json()) as ExerciseData;
+        setExerciseData(data);
+        setCurrentWeight(ex.weight || 0);
+      } catch (e) {
+        if (e && typeof e === 'object' && 'name' in e && (e as { name?: string }).name === 'AbortError') {
+          // ignore
+        } else {
+          console.error('Errore caricamento esercizio:', e);
+          setExerciseData(null);
         }
-        return () => controller.abort();
       }
-    };
-    if (exercises.length > 0) loadExerciseData();
+    })();
+    return () => controller.abort();
   }, [currentIndex, exercises]);
 
   useEffect(() => {
     if (isRunning) {
-      intervalRef.current = setInterval(() => {
-        setTimer(t => (phase === 'rest' ? t - 1 : t + 1))
-        setTotalWorkoutSeconds(t => t + 1)
-      }, 1000)
-    } else {
-      clearInterval(intervalRef.current!)
+      intervalRef.current = window.setInterval(() => {
+        setTimer((t) => (phase === 'rest' ? t - 1 : t + 1));
+        setTotalWorkoutSeconds((t) => t + 1);
+      }, 1000);
+    } else if (intervalRef.current !== null) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
     }
-
-    return () => clearInterval(intervalRef.current!)
-  }, [isRunning, phase])
+    return () => {
+      if (intervalRef.current !== null) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [isRunning, phase]);
 
   useEffect(() => {
     if (phase === 'rest' && timer <= 0 && isRunning) {
-      completeRep()
+      completeRep();
     }
-  }, [timer, phase, isRunning])
+  }, [timer, phase, isRunning]);
 
   const startWorkout = () => {
     setTimer(0);
     setIsRunning(true);
     setPhase('workout');
-  }
+  };
 
   const saveWeight = (weight: number) => {
     setCurrentWeight(weight);
     setShowWeightModal(false);
-    
     updateExerciseWeight(weight);
-  }
+  };
 
-   const updateExerciseWeight = async (weight: number) => {
+  const updateExerciseWeight = async (weight: number) => {
     const updatedExercises = [...exercises];
     updatedExercises[currentIndex] = { ...updatedExercises[currentIndex], weight };
-
     setExercises(updatedExercises);
-    
     try {
       const res = await authedFetch(`/api/sheet/${sheetId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ exercises: updatedExercises }),
       });
-      if (!res.ok) {
-        console.error('Errore salvataggio peso:', res.status);
-      }
+      if (!res.ok) console.error('Errore salvataggio peso:', res.status);
     } catch (error) {
-      console.error("Errore nel salvataggio del peso:", error);
+      console.error('Errore nel salvataggio del peso:', error);
     }
-  }
+  };
 
   const startRest = () => {
-    setTimer(restTime * 60)
-    setIsRunning(true)
-    setPhase('rest')
-  }
+    setTimer(restTime * 60);
+    setIsRunning(true);
+    setPhase('rest');
+  };
 
   const completeRep = () => {
-    setIsRunning(false)
+    setIsRunning(false);
     if (currentRep < totalReps) {
-      setCurrentRep(r => r + 1)
-      setPhase('idle')
-      setTimer(0)
+      setCurrentRep((r) => r + 1);
+      setPhase('idle');
+      setTimer(0);
     } else {
-      nextExercise()
+      nextExercise();
     }
-  }
+  };
 
   const nextExercise = () => {
     if (currentIndex < exercises.length - 1) {
-      setCurrentIndex(i => i + 1)
-      setCurrentRep(1)
-      setTimer(0)
-      setIsRunning(false)
-      setPhase('idle')
+      setCurrentIndex((i) => i + 1);
+      setCurrentRep(1);
+      setTimer(0);
+      setIsRunning(false);
+      setPhase('idle');
     } else {
-      setIsComplete(true)
+      setIsComplete(true);
     }
-  }
+  };
 
   const skipExercise = () => {
-    setIsRunning(false)
-  
-  if (intervalRef.current) {
-    clearInterval(intervalRef.current)
-    intervalRef.current = null
-  }
-    nextExercise()
-  }
+    setIsRunning(false);
+    if (intervalRef.current !== null) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    nextExercise();
+  };
 
   const formatTime = (sec: number) =>
-    `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`
+    `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
 
   const buttonLabel = () => {
-    if (phase === 'idle') return 'Start'
-    if (phase === 'workout') return 'Inizio recupero'
-    if (phase === 'rest') return 'Fine ripetizione'
-    return 'Continua'
-  }
+    if (phase === 'idle') return 'Start';
+    if (phase === 'workout') return 'Inizio recupero';
+    if (phase === 'rest') return 'Fine ripetizione';
+    return 'Continua';
+  };
 
   const handleMainButton = () => {
-    if (phase === 'idle') startWorkout()
-    else if (phase === 'workout') startRest()
-    else if (phase === 'rest') completeRep()
-  }
+    if (phase === 'idle') startWorkout();
+    else if (phase === 'workout') startRest();
+    else if (phase === 'rest') completeRep();
+  };
 
   const handleSaveWorkout = async () => {
     if (!user?.id) return;
     try {
       const res = await authedFetch(`/api/workouts`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: user.id,
           sheetId,
@@ -282,19 +329,29 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
         alert("Errore nel salvataggio dell'allenamento.");
         return;
       }
-      alert("Allenamento salvato nel calendario!");
+      alert('Allenamento salvato nel calendario!');
+      window.location.href = '/exercisesheet';
     } catch (e) {
       console.error('Errore salvataggio workout:', e);
-      alert("Errore di rete nel salvataggio.");
+      alert('Errore di rete nel salvataggio.');
     }
   };
 
+  if (loadingSheet) {
+    return (
+      <div className="min-h-screen bg-zinc-900 text-white flex flex-col justify-center items-center p-6">
+        <span className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></span>
+        <p className="mt-3 text-amber-500">Caricamento scheda...</p>
+      </div>
+    );
+  }
+
   if (exercises.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-900 text-white flex flex-col justify-center items-center p-6">
+      <div className="min-h-screen bg-zinc-900 text-white flex flex-col justify-center items-center p-6">
         <h1 className="text-2xl font-bold mb-6">Nessun esercizio trovato</h1>
       </div>
-    )
+    );
   }
 
   return (
@@ -314,10 +371,16 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
           )}
 
           <div className="text-l space-y-1 text-white">
-            <p><strong>Ripetizioni totali:</strong> {current?.repetitions}</p>
-            <p><strong>Ultimo carico:</strong> {currentWeight} kg</p>
+            <p>
+              <strong>Ripetizioni totali:</strong> {current?.repetitions}
+            </p>
+            <p>
+              <strong>Ultimo carico:</strong> {currentWeight} kg
+            </p>
             {current?.notes && (
-              <p><strong>Note:</strong> <span className="italic">{current.notes}</span></p>
+              <p>
+                <strong>Note:</strong> <span className="italic">{current.notes}</span>
+              </p>
             )}
           </div>
 
@@ -338,8 +401,7 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
           </div>
 
           <div className="flex items-center gap-4 mt-4">
-            
-          <button
+            <button
               onClick={skipExercise}
               className="text-xs text-zinc-200 hover:underline mt-2"
             >
@@ -348,26 +410,25 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
             {phase === 'idle' && (
               <button
                 onClick={() => setShowWeightModal(true)}
-                className="px-4 py-2 bg-zinc-500 text-whit rounded text-sm"
+                className="px-4 py-2 bg-zinc-500 text-white rounded text-sm"
               >
                 Modifica carico
               </button>
-              
-            )}<button
+            )}
+            <button
               onClick={handleMainButton}
-              className="px-6 py-3 bg-amber-500 shadow-md text-zinc-900 hover:bg-zinc-400 rounded text-xl font-semibold transition"
+              className="px-6 py-3 bg-amber-500 shadow-md text-zinc-900 hover:bg-amber-400 rounded text-xl font-semibold transition"
             >
               {buttonLabel()}
             </button>
-           
           </div>
         </div>
       </div>
 
-      <WeightModal 
+      <WeightModal
         isOpen={showWeightModal}
         currentWeight={currentWeight}
-        onSave={saveWeight} 
+        onSave={saveWeight}
         onClose={() => setShowWeightModal(false)}
       />
 
@@ -375,10 +436,10 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
         isOpen={isComplete}
         totalSeconds={totalWorkoutSeconds}
         onSave={handleSaveWorkout}
-        onClose={() => window.location.href = '/exercisesheet'}
+        onClose={() => (window.location.href = '/exercisesheet')}
       />
     </>
-  )
-}
+  );
+};
 
-export default WorkoutRunner
+export default WorkoutRunner;

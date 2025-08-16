@@ -32,7 +32,6 @@ const monthNames = [
 ];
 const weekDays = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
 
-
 export default function AgendaPage() {
   const { user, isSignedIn, isLoaded } = useUser();
   const api = useApi();
@@ -71,7 +70,6 @@ export default function AgendaPage() {
     }
     setErrorVisible(false);
   };
-  const log = (...args: unknown[]) => console.log('[Agenda]', ...args);
 
   const toLocalYMD = (d: Date) => {
     const y = d.getFullYear();
@@ -79,11 +77,10 @@ export default function AgendaPage() {
     const day = String(d.getDate()).padStart(2, '0');
     return `${y}-${m}-${day}`;
   };
-useEffect(() => {
- isMounted.current = true;
-    log('mount -> isLoaded:', isLoaded, 'isSignedIn:', isSignedIn, 'userId:', user?.id);
+
+  useEffect(() => {
+    isMounted.current = true;
     return () => {
-      log('unmount -> aborting any in-flight requests');
       isMounted.current = false;
       controllerRef.current?.abort('component unmounted');
       if (errorDelayRef.current) clearTimeout(errorDelayRef.current);
@@ -92,19 +89,12 @@ useEffect(() => {
 
   useEffect(() => {
     apiRef.current = api;
-    log('useApi updated/refreshed');
   }, [api]);
 
   const fetchData = async () => {
-    log('fetchData called. isLoaded:', isLoaded, 'isSignedIn:', isSignedIn, 'userId:', user?.id);
-
-    if (!isLoaded) {
-      log('skip fetch: Clerk not loaded yet');
-      return;
-    }
+    if (!isLoaded) return;
     if (!isSignedIn || !user?.id) {
       startErrorDelay();
-      log('skip fetch: user not signed in or missing id');
       setLoading(false);
       setError("Devi effettuare l'accesso per visualizzare i tuoi workout");
       return;
@@ -115,13 +105,9 @@ useEffect(() => {
     controllerRef.current = controller;
 
     try {
-      startErrorDelay(); 
+      startErrorDelay();
       setLoading(true);
       setError(null);
-      log('fetch start -> calling endpoints', {
-        workouts: `/api/workouts/user/${user.id}`,
-        sheets: `/api/sheet/user/${user.id}`
-      });
 
       const [wsRes, ssRes] = await Promise.allSettled([
         apiRef.current.get<Workout[]>(`/api/workouts/user/${user.id}`, { signal: controller.signal }),
@@ -132,38 +118,26 @@ useEffect(() => {
       let sheetsOk = false;
 
       if (wsRes.status === 'fulfilled') {
-        log('workouts OK. count:', wsRes.value.length);
         if (isMounted.current) setWorkouts(wsRes.value);
         workoutsOk = true;
-      } else {
-        log('workouts FAILED ->', wsRes.reason);
       }
 
       if (ssRes.status === 'fulfilled') {
-        log('sheets OK. count:', ssRes.value.length);
         if (isMounted.current) setSheets(ssRes.value);
         sheetsOk = true;
-      } else {
-        log('sheets FAILED ->', ssRes.reason);
       }
 
       if (!workoutsOk && !sheetsOk) {
-        log('both requests failed -> setting error');
         if (isMounted.current) setError("Impossibile caricare i dati. Verifica la connessione o l'autenticazione e riprova.");
       } else if (isMounted.current) {
         setError(null);
-        clearErrorDelay(); 
+        clearErrorDelay();
       }
     } catch (err) {
-      log('fetchData fatal error:', err);
+      console.error('Errore durante il caricamento dei dati:', err);
       if (isMounted.current) setError('Errore imprevisto durante il caricamento. Riprova.');
     } finally {
-      if (isMounted.current) {
-        setLoading(false);
-        log('fetch end -> loading=false');
-      } else {
-        log('fetch end -> skipped setState (unmounted)');
-      }
+      if (isMounted.current) setLoading(false);
       if (controllerRef.current === controller) {
         controllerRef.current = null;
       }
@@ -171,7 +145,6 @@ useEffect(() => {
   };
 
   useEffect(() => {
-    log('effect -> deps changed: isLoaded:', isLoaded, 'isSignedIn:', isSignedIn, 'userId:', user?.id);
     if (!isLoaded) return;
     if (!isSignedIn || !user?.id) {
       setLoading(false);
@@ -200,7 +173,7 @@ useEffect(() => {
 
   const selectedWorkouts = selectedDay ? (workoutsByDay[selectedDay] || []) : [];
 
- const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
   const jsFirstDay = new Date(currentYear, currentMonth, 1).getDay();
   const offset = (jsFirstDay + 6) % 7; // Lunedì-first
   const calendarDays: (string | null)[] = [];
@@ -211,7 +184,6 @@ useEffect(() => {
   }
 
   const prevMonth = () => {
-    log('prevMonth');
     setError(null);
     if (currentMonth === 0) {
       setCurrentMonth(11);
@@ -222,7 +194,6 @@ useEffect(() => {
   };
 
   const nextMonth = () => {
-    log('nextMonth');
     setError(null);
     if (currentMonth === 11) {
       setCurrentMonth(0);
@@ -233,7 +204,6 @@ useEffect(() => {
   };
 
   const handleDeleteWorkout = async (workoutId: string) => {
-    log('delete -> start', workoutId);
     try {
       setIsDeleting(true);
       await apiRef.current.delete(`/api/workouts/${workoutId}`);
@@ -241,7 +211,6 @@ useEffect(() => {
 
       setWorkouts(prev => prev.filter(w => w._id !== workoutId));
       setDeleteSuccess(true);
-      log('delete -> success', workoutId);
 
       setTimeout(() => {
         if (!isMounted.current) return;
@@ -249,19 +218,19 @@ useEffect(() => {
         setDeleteSuccess(false);
 
         if (selectedDay) {
-          const remaining = (workoutsByDay[selectedDay]?.length || 0) - 1; 
+          const remaining = (workoutsByDay[selectedDay]?.length || 0) - 1;
           if (remaining <= 0) setSelectedDay(null);
         }
       }, 1200);
     } catch (err) {
-      log('delete -> error', err);
+      console.error("Errore durante l'eliminazione del workout:", err);
       alert("Errore durante l'eliminazione del workout");
     } finally {
       setIsDeleting(false);
     }
   };
 
-   if (isLoaded && !isSignedIn) {
+  if (isLoaded && !isSignedIn) {
     if (!errorVisible) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-zinc-600 p-4">
@@ -329,21 +298,19 @@ useEffect(() => {
 
         {/* Messaggi di errore */}
         {errorVisible && error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
-          <button
-            onClick={() => {
-              log('Retry clicked');
-              setError(null);
-              fetchData();
-            }}
-            className="ml-4 px-2 py-1 bg-red-200 hover:bg-red-300 rounded text-sm"
-          >
-            Riprova
-          </button>
-        </div>
-      )}
-
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            {error}
+            <button
+              onClick={() => {
+                setError(null);
+                fetchData();
+              }}
+              className="ml-4 px-2 py-1 bg-red-200 hover:bg-red-300 rounded text-sm"
+            >
+              Riprova
+            </button>
+          </div>
+        )}
 
         {/* Titolo desktop */}
         <h1 className="text-3xl text-amber-500 font-bold mb-6 hidden md:block">Agenda</h1>
@@ -401,8 +368,8 @@ useEffect(() => {
             </div>
 
             {/* Griglia giorni - click sui giorni con workout */}
-                <div className="grid grid-cols-7 gap-1 md:gap-2">
-               {calendarDays.map((dateStr, idx) => {
+            <div className="grid grid-cols-7 gap-1 md:gap-2">
+              {calendarDays.map((dateStr, idx) => {
                 const isToday = dateStr === toLocalYMD(new Date());
                 const hasWorkout = !!(dateStr && workoutsByDay[dateStr]);
                 const dayNumber = dateStr ? Number(dateStr.slice(-2)) : '';
@@ -414,11 +381,10 @@ useEffect(() => {
                     className={`md:h-16 lg:h-20 border border-amber-500/60 rounded flex flex-col items-center justify-start p-1 transition
                       ${isToday ? 'ring-1 ring-gray-400' : ''}
                       ${hasWorkout ? 'bg-amber-500/40 hover:bg-zinc-100 cursor-pointer' : 'hover:bg-zinc-100 cursor-default'}
-+                      ${!dateStr ? 'bg-zinc-300/30' : isSunday && !hasWorkout ? 'bg-zinc-300/40' : ''}
+                      ${!dateStr ? 'bg-zinc-300/30' : isSunday && !hasWorkout ? 'bg-zinc-300/40' : ''}
                     `}
                     onClick={() => {
                       if (!dateStr || !hasWorkout) return;
-                      log('day clicked ->', dateStr, 'items:', workoutsByDay[dateStr]?.length);
                       setSelectedDay(dateStr);
                     }}
                   >
@@ -478,10 +444,7 @@ useEffect(() => {
                         <div className="text-xs text-white">Esercizi: {w.exercises.length}</div>
                       </div>
                       <button
-                        onClick={() => {
-                          log('delete open ->', w._id);
-                          setWorkoutToDelete(w._id);
-                        }}
+                        onClick={() => setWorkoutToDelete(w._id)}
                         className="text-red-400 hover:text-red-500 text-sm py-1 px-2"
                       >
                         Elimina
@@ -494,10 +457,7 @@ useEffect(() => {
             <div className="flex justify-end mt-6">
               <button
                 className="px-4 py-2 bg-amber-500 text-zinc-900 rounded hover:bg-amber-600 font-semibold"
-                onClick={() => {
-                  log('close day modal');
-                  setSelectedDay(null);
-                }}
+                onClick={() => setSelectedDay(null)}
               >
                 Chiudi
               </button>
@@ -522,10 +482,7 @@ useEffect(() => {
                 <div className="flex justify-end gap-2">
                   <button
                     className="px-4 py-2 bg-gray-400 rounded hover:bg-gray-500"
-                    onClick={() => {
-                      log('delete cancel');
-                      setWorkoutToDelete(null);
-                    }}
+                    onClick={() => setWorkoutToDelete(null)}
                     disabled={isDeleting}
                   >
                     Annulla
