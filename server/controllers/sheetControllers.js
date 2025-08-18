@@ -1,14 +1,16 @@
+// SheetController
+// This file contains the controller logic for managing workout sheets in the application.  
+
 const Sheet = require('../models/sheetModel');
 
-// Crea una nuova scheda
+
+// Create a new workout sheet
 exports.createSheet = async (req, res) => {
   try {
-    // Verifica che l'utente sia autenticato
     if (!req.auth || !req.auth.userId) {
       return res.status(401).json({ error: 'Utente non autenticato' });
     }
-    
-    // Usa l'ID dell'utente autenticato anziché quello fornito nella richiesta
+    // Use the authenticated user's ID
     const userID = req.auth.userId;
     
     if (req.body.exercises) {
@@ -20,7 +22,7 @@ exports.createSheet = async (req, res) => {
     
     const sheet = new Sheet({
       ...req.body,
-      userID // Mantiene l'ID dell'utente autenticato
+      userID // Use the authenticated user's ID
     });
     
     console.log("Creazione scheda per utente:", userID);
@@ -33,23 +35,19 @@ exports.createSheet = async (req, res) => {
   }
 };
 
-// Ottieni tutte le schede dell'utente autenticato
+// Get all workout sheets for the authenticated user
 exports.getSheetsByUser = async (req, res) => {
   try {
-    // Verifica che l'utente sia autenticato
     if (!req.auth || !req.auth.userId) {
       return res.status(401).json({ error: 'Utente non autenticato' });
     }
     
-    // Usa l'ID dell'utente autenticato, ignorando il parametro dell'URL
     const userID = req.auth.userId;
     
-    // Controlla se l'utente sta tentando di accedere alle schede di qualcun altro
     if (req.params.userID && req.params.userID !== userID) {
       console.warn(`Tentativo di accesso alle schede di un altro utente.  Autenticato: ${userID}`);
     }
     
-    // Recupera solo le schede dell'utente autenticato
     const sheets = await Sheet.find({ userID });
     res.json(sheets);
   } catch (err) {
@@ -57,10 +55,9 @@ exports.getSheetsByUser = async (req, res) => {
   }
 };
 
-// Ottieni una singola scheda per ID
+// Get a workout sheet by ID
 exports.getSheetById = async (req, res) => {
   try {
-    // Verifica che l'utente sia autenticato
     if (!req.auth || !req.auth.userId) {
       return res.status(401).json({ error: 'Utente non autenticato' });
     }
@@ -70,7 +67,6 @@ exports.getSheetById = async (req, res) => {
     
     if (!sheet) return res.status(404).json({ error: 'Scheda non trovata' });
     
-    // Verifica che la scheda appartenga all'utente autenticato
     if (sheet.userID !== userID) {
       console.warn(`Tentativo di accesso a una scheda di un altro utente.  Richiedente: ${userID}`);
       return res.status(403).json({ error: 'Non sei autorizzato ad accedere a questa scheda' });
@@ -82,7 +78,7 @@ exports.getSheetById = async (req, res) => {
   }
 };
 
-// Aggiorna una scheda
+// Update a workout sheet
 exports.updateSheet = async (req, res) => {
   try {
     if (!req.auth || !req.auth.userId) {
@@ -115,7 +111,7 @@ exports.updateSheet = async (req, res) => {
   }
 };
 
-// Elimina una scheda
+// Delete a workout sheet
 exports.deleteSheet = async (req, res) => {
   try {
     if (!req.auth || !req.auth.userId) {

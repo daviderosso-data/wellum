@@ -1,3 +1,6 @@
+// workoutModel
+// This file defines the Workout model for the application.
+
 const mongoose = require('mongoose');
 
 const workoutSchema = new mongoose.Schema({

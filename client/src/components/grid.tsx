@@ -111,7 +111,7 @@ const FeatureDescription = ({ children }: { children?: React.ReactNode }) => {
     </p>
   );
 };
- 
+
 export const SkeletonOne = () => {
   return (
     <div className="relative flex py-8 px-2 gap-10 h-full ">

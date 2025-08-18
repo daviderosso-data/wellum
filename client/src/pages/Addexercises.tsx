@@ -4,6 +4,8 @@
 // The form submission is protected by a security code to prevent unauthorized uploads.
 // The page uses React hooks for state management and includes modals for confirming the upload and displaying results.
 // The form is styled with Tailwind CSS for a modern and responsive design.
+
+
 import { useRef, useState, type ChangeEvent } from "react";
 import Sidebar from "../components/Sidebar";
 import { Link } from "react-router-dom";
@@ -14,6 +16,9 @@ import { useForm, SubmitHandler } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
+// Security code for upload
+// This is a temporary solution to protect the upload functionality.
+// It should be replaced with a more secure method in production.
 const UPLOAD_CODE = String(import.meta.env.VITE_DELETE_CODE ?? "");
 
 const formSchema = z.object({
@@ -23,6 +28,7 @@ const formSchema = z.object({
   videoUrl: z.union([z.literal(""), z.string().url("URL non valido")]).optional(),
 });
 type FormInputs = z.infer<typeof formSchema>;
+
 
 export default function AddExercise() {
   const api = useApi();
@@ -55,6 +61,7 @@ export default function AddExercise() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [pendingData, setPendingData] = useState<FormInputs | null>(null);
 
+  // Function to handle form submission
   const onSubmit: SubmitHandler<FormInputs> = (data) => {
     if (!image) {
       setImageError(true);
@@ -68,6 +75,8 @@ export default function AddExercise() {
     setShowSecurityModal(true);
   };
 
+// Function to handle security code confirmation
+// This function checks if the entered security code matches the predefined upload code.
   const handleSecurityConfirm = async () => {
     if (securityCode !== UPLOAD_CODE) {
       setSecurityError("Password scorretta. Riprova.");
@@ -120,6 +129,8 @@ export default function AddExercise() {
     }
   };
 
+  // Function to reset the form
+  // This function clears the form fields, resets the image state, and removes any pending data
   const resetForm = () => {
     reset({ name: "", description: "", group: "", videoUrl: "" });
     setImage(null);
@@ -129,6 +140,8 @@ export default function AddExercise() {
     setImageError(false);
   };
 
+  // Function to handle image file selection
+  // This function updates the image state when a file is selected.
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
     setImage(file);
@@ -226,6 +239,7 @@ export default function AddExercise() {
       </div>
       </div>
 
+{/* Modals for security confirmation and result display */}
       <SecurityModal
         isOpen={showSecurityModal}
         onConfirm={handleSecurityConfirm}
@@ -235,7 +249,7 @@ export default function AddExercise() {
         error={securityError}
         title="Sei sicuro di voler caricare questo esercizio?"
       />
-
+{/* Result modal to show success or error messages after submission */ }
       <ResultModal
         isOpen={showResultModal}
         isSuccess={isSuccess}
@@ -243,7 +257,7 @@ export default function AddExercise() {
         onClose={() => setShowResultModal(false)}
         onReset={resetForm}
       />
-
+{      /* Loading spinner overlay */}
       {isLoading && (
         <div className="fixed inset-0 z-50">
           <div className="min-h-screen flex items-center justify-center bg-zinc-600 p-4">

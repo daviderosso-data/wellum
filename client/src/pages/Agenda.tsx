@@ -1,10 +1,15 @@
+//Agenda
+// This page displays the user's workout agenda, allowing them to view workouts by date and delete them if necessary. 
+// It uses a calendar view to show workouts for each day and provides functionality to delete workouts with confirmation.
+
+
+
 import { useEffect, useRef, useState } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import { Link } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import { useApi } from '../lib/utils';
 
-// Tipi
 type Exercise = {
   exerciseId: string;
   repetitions: number;
@@ -58,11 +63,14 @@ export default function AgendaPage() {
   const [errorVisible, setErrorVisible] = useState(false);
   const errorDelayRef = useRef<number | null>(null);
 
+  // Function to start the error delay
   const startErrorDelay = () => {
     setErrorVisible(false);
     if (errorDelayRef.current) clearTimeout(errorDelayRef.current);
     errorDelayRef.current = window.setTimeout(() => setErrorVisible(true), 5000);
   };
+
+  // Function to clear the error delay
   const clearErrorDelay = () => {
     if (errorDelayRef.current) {
       clearTimeout(errorDelayRef.current);
@@ -71,6 +79,7 @@ export default function AgendaPage() {
     setErrorVisible(false);
   };
 
+  // Function to convert a date to a local YYYY-MM-DD format
   const toLocalYMD = (d: Date) => {
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -78,6 +87,7 @@ export default function AgendaPage() {
     return `${y}-${m}-${day}`;
   };
 
+  // Effect to load workouts and sheets when the component mounts or user changes
   useEffect(() => {
     isMounted.current = true;
     return () => {
@@ -91,6 +101,7 @@ export default function AgendaPage() {
     apiRef.current = api;
   }, [api]);
 
+  // Function to fetch workouts and sheets from the API
   const fetchData = async () => {
     if (!isLoaded) return;
     if (!isSignedIn || !user?.id) {
@@ -144,6 +155,7 @@ export default function AgendaPage() {
     }
   };
 
+  // Initial fetch when the component mounts or when the user state changes
   useEffect(() => {
     if (!isLoaded) return;
     if (!isSignedIn || !user?.id) {
@@ -154,6 +166,7 @@ export default function AgendaPage() {
     fetchData();
   }, [isLoaded, isSignedIn, user?.id]);
 
+  // Effect to handle the deletion of a workout
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
       startErrorDelay();
@@ -165,6 +178,7 @@ export default function AgendaPage() {
   const sheetNameMap: Record<string, string> = {};
   sheets.forEach(s => { sheetNameMap[s._id] = s.name; });
 
+  // Group workouts by day
   const workoutsByDay: Record<string, Workout[]> = {};
   workouts.forEach(w => {
     const day = toLocalYMD(new Date(w.completedAt));
@@ -183,6 +197,7 @@ export default function AgendaPage() {
     calendarDays.push(dateStr);
   }
 
+  // Fill the rest of the month with nulls
   const prevMonth = () => {
     setError(null);
     if (currentMonth === 0) {
@@ -193,6 +208,7 @@ export default function AgendaPage() {
     }
   };
 
+  // Function to go to the next month
   const nextMonth = () => {
     setError(null);
     if (currentMonth === 11) {
@@ -203,6 +219,7 @@ export default function AgendaPage() {
     }
   };
 
+  // Function to handle the deletion of a workout
   const handleDeleteWorkout = async (workoutId: string) => {
     try {
       setIsDeleting(true);
@@ -263,12 +280,10 @@ export default function AgendaPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-zinc-600">
-      {/* Sidebar - Desktop */}
       <div className="fixed top-0 left-0 h-screen w-64 z-10 hidden md:block">
         <Sidebar />
       </div>
 
-      {/* Header - Mobile */}
       <div className="fixed top-0 left-0 right-0 bg-zinc-800 p-3 flex items-center z-20 md:hidden">
         <Sidebar />
         <svg
@@ -288,15 +303,13 @@ export default function AgendaPage() {
         <h1 className="text-xl font-bold text-amber-500 ml-3">Agenda</h1>
       </div>
 
-      {/* Titolo pagina */}
       <div>
         <h1 className="ml-25 m-5 text-2xl font-bold text-amber-500 pt-10">Agenda</h1>
       </div>
 
-      {/* Contenuto principale */}
       <div className="flex-1 p-4 md:p-6 md:ml-64">
 
-        {/* Messaggi di errore */}
+{/* Error message display */}
         {errorVisible && error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
             {error}
@@ -312,10 +325,8 @@ export default function AgendaPage() {
           </div>
         )}
 
-        {/* Titolo desktop */}
         <h1 className="text-3xl text-amber-500 font-bold mb-6 hidden md:block">Agenda</h1>
 
-        {/* Navigazione calendario */}
         <div className="flex items-center justify-between mb-6 bg-zinc-700 rounded-lg p-2">
           <button onClick={prevMonth} className="px-3 py-1 rounded text-amber-500 cursor-pointer hover:bg-zinc-600">
             &lt;
@@ -328,7 +339,7 @@ export default function AgendaPage() {
           </button>
         </div>
 
-        {/* Stato: loading / empty / calendario */}
+{        /* Loading spinner or error message while fetching data */}
         {loading || (error && !errorVisible) ? (
           <div className="flex flex-col justify-center items-center h-64">
             <span className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500 mb-4"></span>
@@ -367,8 +378,8 @@ export default function AgendaPage() {
               ))}
             </div>
 
-            {/* Griglia giorni - click sui giorni con workout */}
             <div className="grid grid-cols-7 gap-1 md:gap-2">
+              {/* Map through the calendar days and display each day */}
               {calendarDays.map((dateStr, idx) => {
                 const isToday = dateStr === toLocalYMD(new Date());
                 const hasWorkout = !!(dateStr && workoutsByDay[dateStr]);
@@ -404,7 +415,6 @@ export default function AgendaPage() {
         )}
       </div>
 
-      {/* Menu mobile */}
       {isMobileMenuOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden">
           <div className="w-64 h-full bg-zinc-800">
@@ -420,7 +430,8 @@ export default function AgendaPage() {
         </div>
       )}
 
-      {/* Modal dettaglio giorno */}
+
+{        /* Modal to display workouts for the selected day */}
       {selectedDay && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-zinc-600 rounded-xl shadow-lg p-4 md:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto m-4">
@@ -466,7 +477,7 @@ export default function AgendaPage() {
         </div>
       )}
 
-      {/* Modal conferma eliminazione */}
+{        /* Modal for workout deletion confirmation */}
       {workoutToDelete && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white rounded shadow-lg p-6 w-full max-w-md m-4">

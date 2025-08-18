@@ -9,10 +9,16 @@ import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { useAuth } from "@clerk/clerk-react";
 
+// useApi
+// This function provides a simple API client for making authenticated requests to the backend.
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+// useApi
+// This custom hook provides an API client for making authenticated requests to the backend.
+// It uses the Clerk authentication library to get the user's token and includes it in the request headers
+// It supports GET, POST, PUT, and DELETE methods and handles errors gracefully.
 export function useApi() {
   const { getToken: clerkGetToken } = useAuth();
   
@@ -23,6 +29,7 @@ export function useApi() {
   };
   
   return {
+    
     
     async get<T = unknown>(endpoint: string, p0: { signal: AbortSignal; }): Promise<T> {
       try {

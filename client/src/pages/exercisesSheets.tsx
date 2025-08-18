@@ -1,3 +1,10 @@
+// ExercisesSheets
+// This page allows users to create and manage their workout sheets, including adding exercises, setting series and repetitions, and saving the sheets for future reference.
+// It includes a sidebar for navigation and a modal for creating new sheets.
+// The page fetches available exercises from an API and allows users to select them for their sheets.
+
+
+
 import { useEffect, useState } from "react";
 import { useUser } from "@clerk/clerk-react";
 import { useApi } from "../lib/utils";
@@ -33,6 +40,9 @@ type Sheet = {
   createdAt: string;
 };
 
+type SheetFormInputs = z.infer<typeof sheetFormSchema>;
+
+// Schema for the form inputs
 const exerciseEntrySchema = z.object({
   exerciseId: z.string().min(1, "Seleziona un esercizio"),
   serie: z.number().int().min(1, "Min 1").max(100, "Max 100"),
@@ -41,11 +51,11 @@ const exerciseEntrySchema = z.object({
   notes: z.string().max(300, "Max 300 caratteri").optional(),
 });
 
+// Schema for the sheet form
 const sheetFormSchema = z.object({
   name: z.string().min(1, "Nome richiesto"),
 }).and(exerciseEntrySchema.partial());
 
-type SheetFormInputs = z.infer<typeof sheetFormSchema>;
 
 export default function ExercisesSheets() {
   const [sheets, setSheets] = useState<Sheet[]>([]);
@@ -69,6 +79,8 @@ export default function ExercisesSheets() {
   const { user, isLoaded, isSignedIn } = useUser();
   const api = useApi();
 
+
+  // Fetch sheets when the component mounts or when user state changes
   useEffect(() => {
     if (!isLoaded || !isSignedIn || !user?.id) return;
     const fetchSheets = async () => {
@@ -87,6 +99,8 @@ export default function ExercisesSheets() {
     fetchSheets();
   }, [user?.id, isLoaded, isSignedIn]);
 
+
+  // Fetch available exercises when the component mounts or when showModal changes
   useEffect(() => {
     if (!showModal || !isSignedIn) return;
     const fetchExercises = async () => {
@@ -101,6 +115,7 @@ export default function ExercisesSheets() {
     fetchExercises();
   }, [showModal, isSignedIn]);
 
+  // Filter exercises based on search query
   useEffect(() => {
     if (searchQuery.trim() === "") {
       setFilteredExercises([]);
@@ -134,6 +149,7 @@ export default function ExercisesSheets() {
     mode: "onChange",
   });
 
+  // Add current exercise to the selected exercises list
   const addCurrentExercise = async () => {
     const ok = await trigger(["exerciseId", "serie", "repetitions", "weight", "notes"]);
     if (!ok || !currentExercise) return;
@@ -192,15 +208,18 @@ export default function ExercisesSheets() {
     }
   };
 
+  // Remove an exercise from the selected exercises list
   const handleRemoveExercise = (index: number) => {
     setSelectedExercises((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // Handle delete request for a sheet
   const handleDeleteRequest = (sheet: Sheet) => {
     setSheetToDelete(sheet);
     setShowDeleteModal(true);
   };
 
+  // Handle deletion of a sheet
   const handleDeleteSheet = async () => {
     if (!sheetToDelete || !isSignedIn) return;
     try {
@@ -214,6 +233,7 @@ export default function ExercisesSheets() {
     }
   };
 
+// Select an exercise from the dropdown
   const selectExercise = (exercise: Exercise) => {
     setCurrentExercise(exercise);
     setSearchQuery(exercise.name);
@@ -249,6 +269,7 @@ export default function ExercisesSheets() {
           </button>
         </div>
 
+{        /* Loading spinner or error message while fetching data */}
         {!isSignedIn && isLoaded ? (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
             Devi effettuare l'accesso per visualizzare le tue schede.
@@ -283,6 +304,7 @@ export default function ExercisesSheets() {
         )}
       </div>
 
+{        /* Modal for creating a new sheet */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="relative bg-zinc-400 rounded shadow-lg p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -327,6 +349,7 @@ export default function ExercisesSheets() {
                     <input type="hidden" {...register("exerciseId")} />
                     {errors.exerciseId && <p className="text-xs text-red-600">{errors.exerciseId.message}</p>}
 
+{          /* Exercise dropdown for search results */}
                     {showExerciseDropdown && filteredExercises.length > 0 && (
                       <div className="absolute z-10 mt-1 w-full bg-white rounded-md shadow-lg max-h-60 overflow-auto">
                         <ul className="py-1">
@@ -412,6 +435,7 @@ export default function ExercisesSheets() {
                 </button>
               </div>
 
+{              /* List of selected exercises */}
               {selectedExercises.length > 0 && (
                 <div className="bg-zinc-300 p-4 rounded-lg">
                   <h3 className="font-bold mb-2">Esercizi aggiunti ({selectedExercises.length})</h3>
@@ -440,6 +464,7 @@ export default function ExercisesSheets() {
                 </div>
               )}
 
+{              /* Form submission controls */}
               <div className="flex justify-end gap-2">
                 <button
                   type="button"
@@ -461,7 +486,7 @@ export default function ExercisesSheets() {
           </div>
         </div>
       )}
-
+      {        /* Modal for sheet creation confirmation */}
       {createdSheet && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white rounded shadow-lg p-6 w-full max-w-lg">
@@ -479,6 +504,7 @@ export default function ExercisesSheets() {
         </div>
       )}
 
+{        /* Modal for sheet deletion confirmation */}
       {showDeleteModal && sheetToDelete && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white rounded shadow-lg p-6 w-full max-w-md">

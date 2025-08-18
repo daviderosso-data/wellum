@@ -27,6 +27,12 @@ type ExerciseData = {
   imageUrl?: string;
 };
 
+type Props = {
+  sheetId: string;
+  restTime: number; 
+  onFinish?: () => void;
+};
+
 const weightSchema = z.object({
   weight: z.number().min(0, 'Inserisci un peso >= 0').max(1000, 'Peso troppo alto'),
 });
@@ -107,11 +113,6 @@ const WeightModal = ({
   );
 };
 
-type Props = {
-  sheetId: string;
-  restTime: number; // minuti
-  onFinish?: () => void;
-};
 
 const WorkoutRunner = ({ sheetId, restTime }: Props) => {
   const [totalWorkoutSeconds, setTotalWorkoutSeconds] = useState(0);
@@ -126,19 +127,15 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [currentWeight, setCurrentWeight] = useState(0);
   const [loadingSheet, setLoadingSheet] = useState(true);
-
   const { user } = useUser();
   const api = useApi();
   const apiRef = useRef(api);
-  useEffect(() => {
-    apiRef.current = api;
-  }, [api]);
-
   const intervalRef = useRef<number | null>(null);
-
   const current = exercises[currentIndex];
   const totalReps = current?.repetitions || 0;
 
+  // The authedFetch function is used to make authenticated requests to the API
+  // It retrieves the token from the apiRef and includes it in the request headers
   const authedFetch = async (path: string, init?: RequestInit) => {
     const token = await apiRef.current.getToken();
     const baseUrl = apiRef.current.getBaseUrl();
@@ -152,6 +149,20 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
     });
   };
 
+  // Start the workout phase and reset the timer
+  const isAbortError = (err: unknown): boolean =>
+  err instanceof DOMException
+    ? err.name === 'AbortError'
+    : !!err && typeof err === 'object' && 'name' in err && (err as { name?: string }).name === 'AbortError';
+
+  useEffect(() => {
+    apiRef.current = api;
+  }, [api]);
+
+
+  // Fetch the workout sheet data when the component mounts
+  // This uses the authedFetch function to make authenticated requests to the API
+  // It sets the exercises state with the fetched data and handles loading and error states
   useEffect(() => {
     const controller = new AbortController();
     (async () => {
@@ -176,6 +187,10 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
     return () => controller.abort();
   }, [sheetId]);
 
+
+  // Fetch exercise data when the current index changes
+  // This ensures that the exercise data is always up-to-date with the current exercise being displayed
+  // It uses the authedFetch function to make authenticated requests to the API
   useEffect(() => {
     if (!exercises.length) {
       setExerciseData(null);
@@ -195,17 +210,21 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
         setExerciseData(data);
         setCurrentWeight(ex.weight || 0);
       } catch (e) {
-        if (e && typeof e === 'object' && 'name' in e && (e as { name?: string }).name === 'AbortError') {
-          // ignore
-        } else {
-          console.error('Errore caricamento esercizio:', e);
-          setExerciseData(null);
-        }
+       if (!isAbortError(e)) {
+           console.error('Errore caricamento scheda:', e);}
+        } finally {
+        setLoadingSheet(false);
       }
     })();
     return () => controller.abort();
-  }, [currentIndex, exercises]);
+  }, [sheetId]);
 
+
+  // Handle the timer and intervals for workout and rest phases
+  // This uses setInterval to update the timer every second and manages the workout phases
+  // It also handles the completion of rest periods and transitions to the next exercise
+  // The timer is reset when the workout starts or when the phase changes
+  // The component uses useEffect to manage the intervals and cleanup on unmount
   useEffect(() => {
     if (isRunning) {
       intervalRef.current = window.setInterval(() => {
@@ -224,24 +243,36 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
     };
   }, [isRunning, phase]);
 
+  // Handle the completion of rest periods and transitions to the next exercise
+  // This checks if the timer has reached zero during a rest phase and completes the current repetition
+  // It also handles the transition to the next exercise or marks the workout as complete if all exercises are done
+  // The component uses useEffect to manage the completion logic based on the timer
   useEffect(() => {
     if (phase === 'rest' && timer <= 0 && isRunning) {
       completeRep();
     }
   }, [timer, phase, isRunning]);
 
+  // Start the workout phase and reset the timer
+  // This sets the timer to zero, marks the workout as running, and changes the phase
   const startWorkout = () => {
     setTimer(0);
     setIsRunning(true);
     setPhase('workout');
   };
 
+  // Save the current weight and close the weight modal
+  // This updates the current weight state and calls the updateExerciseWeight function to save the weight
+  // It also closes the weight modal
   const saveWeight = (weight: number) => {
     setCurrentWeight(weight);
     setShowWeightModal(false);
     updateExerciseWeight(weight);
   };
 
+  // Update the weight for the current exercise
+  // This updates the exercises state with the new weight for the current exercise
+  // It also sends a PUT request to the API to save the updated exercises
   const updateExerciseWeight = async (weight: number) => {
     const updatedExercises = [...exercises];
     updatedExercises[currentIndex] = { ...updatedExercises[currentIndex], weight };
@@ -258,12 +289,18 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
     }
   };
 
+
+
+// Start the rest phase and set the timer for the rest period
+// This sets the timer to the specified rest time in seconds, marks the workout as running,
   const startRest = () => {
     setTimer(restTime * 60);
     setIsRunning(true);
     setPhase('rest');
   };
 
+  // Complete the current repetition and reset the timer
+  // This increments the current repetition count and resets the timer to zero
   const completeRep = () => {
     setIsRunning(false);
     if (currentRep < totalReps) {
@@ -275,6 +312,8 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
     }
   };
 
+  // Navigate to the next exercise or mark the workout as complete
+  // This checks if there are more exercises to complete and updates the current index and repetition count
   const nextExercise = () => {
     if (currentIndex < exercises.length - 1) {
       setCurrentIndex((i) => i + 1);
@@ -287,6 +326,9 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
     }
   };
 
+  // Skip the current exercise and move to the next one
+  // This sets the workout as not running, clears the interval if it exists, and navigates to the next exercise
+  // It also resets the timer to zero
   const skipExercise = () => {
     setIsRunning(false);
     if (intervalRef.current !== null) {
@@ -296,9 +338,11 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
     nextExercise();
   };
 
+  // Format the time in minutes and seconds for display
   const formatTime = (sec: number) =>
     `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
 
+  // Determine the label for the main button based on the current phase
   const buttonLabel = () => {
     if (phase === 'idle') return 'Start';
     if (phase === 'workout') return 'Inizio recupero';
@@ -306,13 +350,21 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
     return 'Continua';
   };
 
+  // Handle the main button click based on the current phase
+  // This starts the workout if in idle phase, starts rest if in workout phase, or completes the repetition if in rest phase
+  // It uses the handleMainButton function to determine the action to take
   const handleMainButton = () => {
     if (phase === 'idle') startWorkout();
     else if (phase === 'workout') startRest();
     else if (phase === 'rest') completeRep();
   };
 
+
+  // Handle saving the workout to the calendar
+  // This checks if the user is authenticated and sends a POST request to save the workout data
+  // It includes the user ID, sheet ID, total workout seconds, and exercises in the request body
   const handleSaveWorkout = async () => {
+    // Ensure the user is authenticated before saving the workout
     if (!user?.id) return;
     try {
       const res = await authedFetch(`/api/workouts`, {
@@ -336,7 +388,7 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
       alert('Errore di rete nel salvataggio.');
     }
   };
-
+// If the sheet is loading, display a loading spinner
   if (loadingSheet) {
     return (
       <div className="min-h-screen bg-zinc-900 text-white flex flex-col justify-center items-center p-6">
@@ -345,7 +397,7 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
       </div>
     );
   }
-
+// If there are no exercises, display a message
   if (exercises.length === 0) {
     return (
       <div className="min-h-screen bg-zinc-900 text-white flex flex-col justify-center items-center p-6">
@@ -424,14 +476,14 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
           </div>
         </div>
       </div>
-
+{      /* Modal for entering weight */}
       <WeightModal
         isOpen={showWeightModal}
         currentWeight={currentWeight}
         onSave={saveWeight}
         onClose={() => setShowWeightModal(false)}
       />
-
+{      /* Modal for completing the workout */}
       <WorkoutCompleteModal
         isOpen={isComplete}
         totalSeconds={totalWorkoutSeconds}

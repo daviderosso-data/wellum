@@ -44,10 +44,10 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
   const [editExercises, setEditExercises] = useState<ExerciseItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   const api = useApi();
   const { isSignedIn, isLoaded } = useUser();
 
+  // Fetch exercise details when the component mounts or when the sheet changes
   useEffect(() => {
     if (!isLoaded || !isSignedIn) return;
     
@@ -76,6 +76,7 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
     fetchDetails();
   }, [sheet.exercises, isSignedIn, isLoaded]);
 
+  // Handle adding a new exercise
   const handleAddExercise = async (newExercise: ExerciseItem) => {
     if (!isSignedIn) {
       setError("Devi essere autenticato per aggiungere un esercizio");

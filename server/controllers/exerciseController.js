@@ -1,6 +1,11 @@
+// ExerciseController
+// This file contains the controller logic for managing exercises in the application. 
+
+
 const Exercise = require('../models/exerciseModel')
 
-// Crea nuovo esercizio
+
+// Create a new exercise
 exports.createExercise = async (req, res) => {
   const { name, imageUrl, description } = req.body
 
@@ -9,34 +14,36 @@ exports.createExercise = async (req, res) => {
   console.log(JSON.stringify(req.body, null, 2));
   res.json(exercise)
 }
+
+// Create a new exercise with image URL and video URL
 exports.createExerciseWithImage = async ({ name, description, imageUrl, group, videoUrl }) => {
   const exercise = new Exercise({ name, description, imageUrl, group, videoUrl });
   await exercise.save();
   return exercise;
 };
 
-// Lista tutti gli esercizi
+
+// Get all exercises
 exports.getExercises =  async (req, res) => {
   const exercises = await Exercise.find()
   res.json(exercises)
 }
 
-// Dettaglio di un esercizio
+// Get exercise by ID
 exports.getExerciseById = async (req, res) => {
   const exercise = await Exercise.findById(req.params.id)
   res.json(exercise)
 }
 
-// Modifica esercizio
+// Update an exercise
 exports.updateExercise = async (req, res) => {
   const exercise = await Exercise.findByIdAndUpdate(req.params.id, req.body, { new: true })
   res.json(exercise)
 }
 
-// Cancella esercizio
+// Delete an exercise
 exports.deleteExercise = async (req, res) => {
   try {
-    // Verifica che l'utente sia autenticato
     if (!req.auth || !req.auth.userId) {
       return res.status(401).json({ error: 'Utente non autenticato' });
     }
