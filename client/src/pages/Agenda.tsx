@@ -304,7 +304,7 @@ export default function AgendaPage() {
       </div>
 
       <div>
-        <h1 className="ml-25 m-5 text-2xl font-bold text-amber-500 pt-10">Agenda</h1>
+        <h1 className="hidden md:block md:ml-25 m-5 text-2xl font-bold text-amber-500 pt-10">Agenda</h1>
       </div>
 
       <div className="flex-1 p-4 md:p-6 md:ml-64">
