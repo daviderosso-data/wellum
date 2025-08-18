@@ -108,7 +108,7 @@ const WorkoutSetup = ({ userId, onStart, onBack }: Props) => {
             className={`w-full border px-3 py-2 rounded disabled:opacity-60 ${sheets.length === 0 ? ' font-semibold' : ''}`}
             disabled={isLoading || !!error}
           >
-            {/* Placeholder dinamico */}
+{/* Display loading spinner or default option */}
             <option value="" disabled>
               {isLoading
                 ? 'Caricamento...'

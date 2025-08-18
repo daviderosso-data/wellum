@@ -175,11 +175,9 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
         setExercises(exs);
         if (exs.length > 0) setCurrentWeight(exs[0].weight || 0);
       } catch (e) {
-        if (e && typeof e === 'object' && 'name' in e && (e as { name?: string }).name === 'AbortError') {
-          // ignore
-        } else {
-          console.error('Errore caricamento scheda:', e);
-        }
+        if (!isAbortError(e)) {
+         console.error('Errore caricamento scheda:', e);
+      }
       } finally {
         setLoadingSheet(false);
       }
@@ -202,6 +200,7 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
       return;
     }
     const controller = new AbortController();
+    setExerciseData(null);
     (async () => {
       try {
         const res = await authedFetch(`/api/exercises/${ex.exerciseId}`, { signal: controller.signal });
@@ -210,14 +209,14 @@ const WorkoutRunner = ({ sheetId, restTime }: Props) => {
         setExerciseData(data);
         setCurrentWeight(ex.weight || 0);
       } catch (e) {
-       if (!isAbortError(e)) {
-           console.error('Errore caricamento scheda:', e);}
-        } finally {
-        setLoadingSheet(false);
+      if (!isAbortError(e)) {
+          console.error('Errore caricamento esercizio:', e);
+          setExerciseData(null);
+        }
       }
-    })();
+      })();
     return () => controller.abort();
-  }, [sheetId]);
+  }, [exercises, currentIndex]);
 
 
   // Handle the timer and intervals for workout and rest phases

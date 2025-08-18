@@ -92,7 +92,7 @@ export default function AgendaPage() {
     isMounted.current = true;
     return () => {
       isMounted.current = false;
-      controllerRef.current?.abort('component unmounted');
+      controllerRef.current?.abort();
       if (errorDelayRef.current) clearTimeout(errorDelayRef.current);
     };
   }, []);
@@ -111,7 +111,7 @@ export default function AgendaPage() {
       return;
     }
 
-    controllerRef.current?.abort('new fetch requested');
+    controllerRef.current?.abort();
     const controller = new AbortController();
     controllerRef.current = controller;
 

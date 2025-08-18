@@ -5,8 +5,8 @@
 
 import { useEffect, useState } from "react";
 import AddExerciseModal from "./AddExerciseModal";
-import { useApi } from "../lib/utils"; // Importa il wrapper API
-import { useUser } from "@clerk/clerk-react"; // Importa useUser per verificare l'autenticazione
+import { useApi } from "../lib/utils"; 
+import { useUser } from "@clerk/clerk-react"; 
 
 type ExerciseItem = {
   exerciseId: string;
@@ -101,11 +101,13 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
     }
   };
 
+  // Handle editing all exercises in the sheet
   const handleEditAll = () => {
     setEditExercises(sheet.exercises.map(ex => ({ ...ex })));
     setIsEditing(true);
   };
 
+  // Handle changes in the edit form
   const handleEditChange = (idx: number, field: keyof ExerciseItem, value: string | number) => {
     setEditExercises(prev =>
       prev.map((ex, i) =>
@@ -114,6 +116,7 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
     );
   };
   
+  // Handle saving all edits
   const handleSaveAll = async () => {
     if (!isSignedIn) {
       setError("Devi essere autenticato per salvare le modifiche");
@@ -138,12 +141,14 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
     }
   };
 
+// Handle canceling edits
   const handleCancelAll = () => {
     setIsEditing(false);
     setEditExercises([]);
     setError(null);
   };
 
+  // Handle deleting an exercise from the edit form
   const handleDeleteExercise = (idx: number) => {
     setEditExercises(prev => prev.filter((_, i) => i !== idx));
   };
@@ -222,6 +227,7 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
       </div>
       
       <ul className="mb-2">
+        {/* Display exercises in the sheet */}
         {(isEditing ? editExercises : sheet.exercises).map((ex, idx) => {
           const details = exerciseDetails[ex.exerciseId];
           const isExerciseDeleted = !details;
@@ -254,7 +260,7 @@ export default function SheetCard({ sheet, onDeleteRequest }: Props) {
                       <div className="text-xs text-gray-600 break-words mb-2">{details?.description}</div>
                     </>
                   )}
-                  
+                  {/* Display exercise details in edit mode */}
                   {isEditing ? (
                     <div className="grid grid-cols-1 gap-2">
                       <div>
