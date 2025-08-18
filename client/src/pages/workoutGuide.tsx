@@ -1,3 +1,8 @@
+//WorkoutGuide
+// this file is part of the client-side workout guide feature
+// It allows users to set up and run a guided workout based on their exercise sheets.
+// The component fetches the user's workout sheets and allows them to select one for their workout.
+
 import { useState } from 'react'
 import { useUser } from '@clerk/clerk-react'
 import WorkoutSetup from '../components/workoutSetup'

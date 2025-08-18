@@ -1,9 +1,12 @@
+// sheetRoutes
+// Routes for managing user sheets
+
 const express = require('express');
 const router = express.Router();
 const sheetController = require('../controllers/sheetControllers');
 const { requireAuth } = require('@clerk/express');
 
-
+// Middleware for authentication
 const authenticate = requireAuth({
   onError: (err, req, res, next) => {
     console.error('Errore autenticazione:', err);
@@ -12,19 +15,19 @@ const authenticate = requireAuth({
 });
 
 
-// Crea una nuova scheda
+// Create a new workout sheet
 router.post('/', authenticate, sheetController.createSheet);
 
-// Ottieni tutte le schede di un utente
+// get all workout sheets for the authenticated user
 router.get('/user/:userID', authenticate, sheetController.getSheetsByUser);
 
-// Ottieni una singola scheda per ID
+// get a workout sheet by ID
 router.get('/:id', authenticate, sheetController.getSheetById);
 
-// Aggiorna una scheda
+// update a workout sheet
 router.put('/:id', authenticate, sheetController.updateSheet);
 
-// Elimina una scheda
+// delete a workout sheet
 router.delete('/:id', authenticate, sheetController.deleteSheet);
 
 module.exports = router;

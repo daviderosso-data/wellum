@@ -1,8 +1,9 @@
-// Definizione schema Exercise
+// xerciseModel
+// This file defines the Exercise model for the application.
 
 const mongoose = require('mongoose')
 
-const ExerciseSchema = new mongoose.Schema({ // Definizione dello schema per gli esercizi
+const ExerciseSchema = new mongoose.Schema({ 
   name: {
     type: String,
     required: true,
@@ -29,5 +30,4 @@ const ExerciseSchema = new mongoose.Schema({ // Definizione dello schema per gli
   }
 })
 
-// Esporto il modello
 module.exports = mongoose.model('Exercise', ExerciseSchema)

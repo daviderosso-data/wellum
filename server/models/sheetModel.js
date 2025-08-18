@@ -1,3 +1,6 @@
+// sheetModel
+// This file defines the Sheet model for the application.
+
 const mongoose = require('mongoose');
 
 const ExerciseItemSchema = new mongoose.Schema({

@@ -17,6 +17,7 @@ type Exercise = {
     videoUrl?: string
     group: string 
 }
+
 const groupColors: Record<string, string> = {
   "Petto": "bg-red-500",
   "Schiena": "bg-blue-500",
@@ -89,7 +90,7 @@ const ExerciseList = ({ exercises }: Props) => {
       {openVideo && <VideoModal videoUrl={openVideo} onClose={() => setOpenVideo(null)} />}
       
       
-      
+      {/* DeleteExerciseModal is used to confirm the deletion of an exercise */}
       {deleteId && (
         <DeleteExerciseModal
           exerciseId={deleteId}
