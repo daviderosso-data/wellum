@@ -1,8 +1,11 @@
+// workoutController
+// this controller handles workout-related operations such as creating, retrieving, updating, and deleting workouts.
+
 const Workout = require('../models/workoutModel');
 
+// Create a new workout
 exports.createWorkout = async (req, res) => {
   try {
-    // Verifica che l'utente sia autenticato
     if (!req.auth || !req.auth.userId) {
       return res.status(401).json({ error: 'Utente non autenticato' });
     }
@@ -23,6 +26,7 @@ exports.createWorkout = async (req, res) => {
   }
 };
 
+// Get all workouts for the authenticated user
 exports.getUserWorkouts = async (req, res) => {
   try {
     if (!req.auth || !req.auth.userId) {
@@ -43,6 +47,7 @@ exports.getUserWorkouts = async (req, res) => {
   }
 };
 
+// Update a workout
 exports.deleteWorkout = async (req, res) => {
   try {
     if (!req.auth || !req.auth.userId) {
@@ -70,6 +75,7 @@ exports.deleteWorkout = async (req, res) => {
   }
 };
 
+// Get a workout by ID
 exports.getWorkoutById = async (req, res) => {
   try {
     if (!req.auth || !req.auth.userId) {

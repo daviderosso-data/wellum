@@ -8,10 +8,12 @@ import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 const API_URL = import.meta.env.VITE_URL_SERVER 
 
+// SignUpSuccess component
 const SignUpSuccess = () => {
   const { user, isSignedIn } = useUser()
   const navigate = useNavigate()
 
+  // Effect to save the new user data to the server
   useEffect(() => {
     const saveNewUser = async () => {
       if (isSignedIn && user) {

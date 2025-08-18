@@ -9,6 +9,9 @@ import { useState } from 'react';
 import { useApi } from '../lib/utils'; 
 import { useUser } from '@clerk/clerk-react'; 
 
+// Security code for deletion
+// This code is used to protect the deletion operation, ensuring that only authorized users can delete exercises
+// It is a provvisory solution and should be replaced with a more secure method in production.
 const DELETE_CODE = import.meta.env.VITE_DELETE_CODE;
 
 type DeleteExerciseModalProps = {
@@ -17,6 +20,9 @@ type DeleteExerciseModalProps = {
   onDeleted?: () => void;
 };
 
+// DeleteExerciseModal component
+// This modal is used to confirm the deletion of an exercise.
+// It prompts the user to enter a security code and handles the deletion process.
 const DeleteExerciseModal = ({ exerciseId, onClose, onDeleted }: DeleteExerciseModalProps) => {
   const [deleteCode, setDeleteCode] = useState("");
   const [deleteError, setDeleteError] = useState("");
@@ -70,7 +76,7 @@ const DeleteExerciseModal = ({ exerciseId, onClose, onDeleted }: DeleteExerciseM
             ? "Esercizio eliminato con successo!" 
             : "Sei sicuro di voler eliminare questo esercizio?"}
         </p>
-        
+        {/* Show input for security code only if deletion is not successful */}
         {!deleteSuccess && (
           <div className="mb-4">
             <label className="block text-gray-700 text-sm font-bold mb-2">
@@ -88,7 +94,7 @@ const DeleteExerciseModal = ({ exerciseId, onClose, onDeleted }: DeleteExerciseM
             )}
           </div>
         )}
-        
+        {/* Show buttons for deletion confirmation or cancellation */}
         {!deleteSuccess && (
           <div className="flex justify-center gap-4">
             <button

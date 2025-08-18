@@ -8,6 +8,10 @@ import { FaHome, FaBars, FaTimes } from 'react-icons/fa'
 import { UserButton, useUser } from '@clerk/clerk-react'
 import { useState } from 'react'
 
+
+// The Sidebar component
+// It uses React hooks to manage the open state of the sidebar in mobile view.
+// The sidebar includes links to different pages and displays the user's name and profile picture.
 const Sidebar = () => {
   const location = useLocation()
   const { user } = useUser()
@@ -31,7 +35,7 @@ const Sidebar = () => {
           <FaBars size={24} />
         </button>
       </div>
-
+{/* Sidebar for larger screens */}
       <div className="hidden md:block w-64 h-screen bg-zinc-800 shadow-md p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex"> <img src="assets/pictures/logoAmberTransp.png" className="h-7"></img>  <h1 className="text-xl font-bold font-display text-amber-500 curosor-pointer"><Link to="/">Wellum</Link></h1></div>

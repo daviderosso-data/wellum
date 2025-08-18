@@ -1,3 +1,9 @@
+// AddExerciseModal
+// Modal component for adding exercises to a workout plan
+// It allows users to search for exercises, select one, and specify details like series, repetitions
+// and weight. The form is validated using Zod and React Hook Form.
+
+
 import { useEffect, useRef, useState } from "react";
 import { useApi } from "../lib/utils";
 import { useForm, SubmitHandler } from "react-hook-form";
@@ -26,6 +32,8 @@ type AddExerciseModalProps = {
   onAddExercise: (exercise: ExerciseItem) => Promise<void>;
 };
 
+type FormInputs = z.infer<typeof formSchema>;
+
 const formSchema = z.object({
   exerciseId: z.string().min(1, "Seleziona un esercizio"),
   serie: z.number().int().min(1, "Minimo 1").max(10, "Max 10"),
@@ -34,10 +42,9 @@ const formSchema = z.object({
   notes: z.string().max(500, "Max 500 caratteri").optional(),
 });
 
-type FormInputs = z.infer<typeof formSchema>;
-
 export default function AddExerciseModal({ isOpen, onClose, onAddExercise }: AddExerciseModalProps) {
   const api = useApi();
+
   const apiRef = useRef(api);
   useEffect(() => {
     apiRef.current = api;
@@ -62,6 +69,13 @@ export default function AddExerciseModal({ isOpen, onClose, onAddExercise }: Add
   const [isFetching, setIsFetching] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const didFetchOnOpenRef = useRef(false);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+
+ useEffect(() => {
+    if (isOpen) {
+     setTimeout(() => searchInputRef.current?.focus(), 0);
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -140,7 +154,8 @@ export default function AddExerciseModal({ isOpen, onClose, onAddExercise }: Add
     <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded shadow-lg p-4 md:p-6 max-w-md w-full">
         <h3 className="text-lg font-bold mb-4">Aggiungi esercizio</h3>
-
+        
+        {/* Show loading state if fetching exercises */}
         {isFetching && (
           <div className="min-h-[32px] flex items-center gap-2 text-gray-600 mb-2">
             <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-amber-500"></span>
@@ -169,6 +184,7 @@ export default function AddExerciseModal({ isOpen, onClose, onAddExercise }: Add
               required
               disabled={!!fetchError}
             />
+            {/* Show dropdown only if there are exercises to display */}
             {showExerciseDropdown && filteredExercises.length > 0 && (
               <div className="absolute z-10 mt-1 w-full bg-white rounded-md shadow-lg max-h-48 overflow-auto">
                 <ul className="py-1">

@@ -32,6 +32,7 @@ export default function Exercises() {
   const api = useApi(); 
   const { isLoaded, isSignedIn } = useUser();
 
+  // Fetch exercises when the component mounts or when dependencies change
   useEffect(() => {
     if (!isLoaded) return;
     
@@ -41,6 +42,7 @@ export default function Exercises() {
       return;
     }
     
+    // Function to fetch exercises from the API
     const fetchExercises = async () => {
       try {
         setLoading(true);
@@ -72,10 +74,12 @@ export default function Exercises() {
     currentPage * EXERCISES_PER_PAGE
   );
 
+  // Reset current page when group filter changes
   useEffect(() => {
     setCurrentPage(1);
   }, [groupFilter]);
 
+  // Render pagination buttons
   const renderPaginationButtons = () => {
     if (window.innerWidth < 640) {
       return (
@@ -107,10 +111,12 @@ export default function Exercises() {
     let startPage = Math.max(1, currentPage - Math.floor(maxVisibleButtons / 2));
     const endPage = Math.min(totalPages, startPage + maxVisibleButtons - 1);
     
+    // Adjust startPage if there are not enough pages to show
     if (endPage - startPage + 1 < maxVisibleButtons) {
       startPage = Math.max(1, endPage - maxVisibleButtons + 1);
     }
     
+    // Ensure we always show at least the first and last page
     if (startPage > 1) {
       pageButtons.push(
         <button
@@ -125,7 +131,7 @@ export default function Exercises() {
         pageButtons.push(<span key="ellipsis1" className="px-2">...</span>);
       }
     }
-    
+    // Generate buttons for the visible page range
     for (let i = startPage; i <= endPage; i++) {
       pageButtons.push(
         <button
@@ -137,7 +143,6 @@ export default function Exercises() {
         </button>
       );
     }
-    
     if (endPage < totalPages) {
       if (endPage < totalPages - 1) {
         pageButtons.push(<span key="ellipsis2" className="px-2">...</span>);
@@ -152,7 +157,8 @@ export default function Exercises() {
         </button>
       );
     }
-    
+
+    // Return the pagination buttons wrapped in a flex container
     return (
       <>
         <button
@@ -196,6 +202,7 @@ export default function Exercises() {
       <div className="flex-1 p-4 md:p-6 md:ml-64 w-full mt-14 md:mt-0">
         <h1 className="text-3xl font-bold text-amber-500 mb-6 hidden md:block">Esercizi</h1>
       
+      {        /* Loading spinner or error message while fetching data */}
         {loading ? (
           <div className="min-h-screen flex items-center justify-center bg-zinc-600 p-4">
             <span className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></span>
@@ -237,6 +244,8 @@ export default function Exercises() {
                 ))}
               </select>
             </div>
+            { }
+            
             
             {paginatedExercises.length > 0 ? (
               <ExerciseList exercises={paginatedExercises} />
@@ -246,6 +255,7 @@ export default function Exercises() {
               </div>
             )}
             
+            {        /* Pagination controls */}
             {totalPages > 0 && (
               <div className="flex flex-wrap justify-center mt-6 gap-2">
                 {renderPaginationButtons()}
