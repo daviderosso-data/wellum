@@ -327,7 +327,7 @@ export default function AgendaPage() {
 
         <h1 className="text-3xl text-amber-500 font-bold mb-6 hidden md:block">Agenda</h1>
 
-        <div className="flex items-center justify-between mb-6 bg-zinc-700 rounded-lg p-2">
+        <div className="flex mt-20 items-center justify-between mb-6 bg-zinc-700 rounded-lg p-2">
           <button onClick={prevMonth} className="px-3 py-1 rounded text-amber-500 cursor-pointer hover:bg-zinc-600">
             &lt;
           </button>
